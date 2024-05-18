@@ -1,0 +1,28 @@
+{
+    "form": {
+        "properties": {
+            "cluster_lvl": {
+                "default": true,
+                "description": "Clone clustering analysis with GLIPH2",
+                "title": "Cluster",
+                "type": "boolean",
+                "value": false
+            },
+            "compare_lvl": {
+                "default": true,
+                "description": "Comparative TCR repertoire analyses across samples and subjects",
+                "title": "Compare",
+                "type": "boolean",
+                "value": false
+            },
+            "sample_lvl": {
+                "default": true,
+                "description": "Calculate and report sample level statistics of TCR repertoire",
+                "title": "Sample",
+                "type": "boolean",
+                "value": false
+            }
+        }
+    },
+    "ui": {}
+}

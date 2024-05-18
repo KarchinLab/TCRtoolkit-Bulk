@@ -1,0 +1,29 @@
+## NextFlow
+*.command*
+*.nextflow*
+*.dot
+runs/*
+
+results*
+work
+
+notebooks/*.png
+notebooks/*.ipynb
+notebooks/*.html
+
+assets/TCRseq_metadata_templates/*
+
+## Python
+bin/__pycache__/*
+scripts/*
+
+## Quarto
+notebooks/*
+!notebooks/sample_stats_template.qmd
+!notebooks/compare_stats_template.qmd
+
+## Bash
+tmp
+
+## vscode
+.vscode/*

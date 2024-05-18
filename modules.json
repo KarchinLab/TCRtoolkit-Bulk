@@ -1,0 +1,17 @@
+{
+  "name": "",
+  "homePage": "",
+  "repos": {
+    "https://github.com/nf-core/modules.git": {
+      "modules": {
+        "nf-core": {
+          "spaceranger/count": {
+            "branch": "master",
+            "git_sha": "2f0ef0cd414ea43e33625023c72b6af936dce63d",
+            "installed_by": ["modules"]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+    "cluster_lvl": "$.params.dataset.paramJson.cluster_lvl",
+    "compare_lvl": "$.params.dataset.paramJson.compare_lvl",
+    "data_dir": "$.params.inputs[0].s3|/data/",
+    "output": "$.params.dataset.s3|/data/",
+    "sample_lvl": "$.params.dataset.paramJson.sample_lvl"
+}
