@@ -5,7 +5,7 @@ format:
     theme: flatly
     toc: true
     toc_depth: 3
-    code-fold: true
+    code-fold: show
     embed-resources: true
     number-sections: true
     smooth-scroll: true

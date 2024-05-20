@@ -21,9 +21,11 @@ workflow COMPARE {
     take:
     sample_utf8
     project_name
+    data_dir
 
     main:
-    CALC_COMPARE( sample_utf8 )
+    CALC_COMPARE( sample_utf8,
+                  data_dir )
 
     PLOT_COMPARE( sample_utf8,
                   CALC_COMPARE.out.jaccard_mat,

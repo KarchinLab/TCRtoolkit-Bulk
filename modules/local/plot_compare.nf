@@ -4,7 +4,7 @@ process PLOT_COMPARE {
 
     container "domebraccia/bulktcr:1.0"
 
-    publishDir "${params.output}/${params.project_name}/compare/", mode: "copy", overwrite: "true", pattern: "*.html"
+    publishDir "${params.output}/reports/", mode: "copy", overwrite: "true"
 
     input:
     path sample_utf8

@@ -53,7 +53,8 @@ workflow TCRTOOLKIT_BULK {
     // Running comparison analysis
     if (levels.contains('compare') || levels.contains('complete')) {
         COMPARE( INPUT_CHECK.out.samplesheet_utf8,
-                 params.project_name )
+                 params.project_name,
+                 file(params.data_dir) )
     }
 
     // Running clustering analysis

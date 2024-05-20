@@ -6,11 +6,11 @@ process CALC_COMPARE {
 
     container "domebraccia/bulktcr:1.0"
 
-    publishDir "${params.output}/${params.project_name}/compare/", mode: "copy", overwrite: "true"
+    publishDir "${params.output}/compare_output/", mode: "copy", overwrite: "true"
     
     input:
     path sample_utf8
-    // path meta_data
+    path data_dir
 
     output:
     path 'jaccard_mat.csv', emit: jaccard_mat

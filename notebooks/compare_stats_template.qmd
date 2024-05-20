@@ -5,7 +5,7 @@ format:
     theme: flatly
     toc: true
     toc_depth: 3
-    code-fold: true
+    code-fold: show
     embed-resources: true
     number-sections: true
     smooth-scroll: true
@@ -83,17 +83,17 @@ morisita_df = pd.read_csv(morisita_mat, sep=',', header=0, index_col=0)
 # jsd_df = pd.read_csv(jsd_mat, sep=',', header=0, index_col=0)
 
 # 5. Importing sample level counts
-sample_utf8 = pd.read_csv(sample_utf8, sep=',', header=0, index_col=0)
-files = sample_utf8['file']
-dfs = {}
-for file in files:
-    # load data
-    df = pd.read_csv(file, sep='\t', header=0)
+# sample_utf8 = pd.read_csv(sample_utf8, sep=',', header=0, index_col=0)
+# files = sample_utf8['file']
+# dfs = {}
+# for file in files:
+#     # load data
+#     df = pd.read_csv(file, sep='\t', header=0)
 
-    # Rename columns
-    df = df.rename(columns={'count (templates/reads)': 'read_count', 'frequencyCount (%)': 'frequency'})
-    sample_id = os.path.basename(file).split('.')[0]
-    dfs[sample_id] = df
+#     # Rename columns
+#     df = df.rename(columns={'count (templates/reads)': 'read_count', 'frequencyCount (%)': 'frequency'})
+#     sample_id = os.path.basename(file).split('.')[0]
+#     dfs[sample_id] = df
 ```
 
 # Analysis

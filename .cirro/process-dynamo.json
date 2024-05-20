@@ -3,14 +3,14 @@
     "code": {
         "repository": "GITHUBPUBLIC",
         "script": "main.nf",
-        "uri": "KarchinLab/TCRtoolkit",
+        "uri": "KarchinLab/TCRtoolkit-Bulk",
         "version": "main"
     },
-    "desc": "A NextFlow pipeline to analyze and report statistics from TCR sequencing datasets",
+    "desc": "A NextFlow pipeline for processing and analyzing TCRseq data",
     "documentationUrl": "",
     "executor": "NEXTFLOW",
-    "id": "btc-tcr-bulk",
-    "name": "TCRtoolkit Bulk",
+    "id": "tcrtk-bulk",
+    "name": "TCRtoolkit-Bulk",
     "parentProcessIds": [
         "table_csv_tsv"
     ]

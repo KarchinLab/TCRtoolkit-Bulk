@@ -5,8 +5,8 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { GLIPH2  } from '../../modules/local/gliph2'
-// include { PLOT_GLIPH2  } from '../../modules/local/plot_gliph2'
+include { GLIPH2        } from '../../modules/local/gliph2'
+include { PLOT_GLIPH2   } from '../../modules/local/plot_gliph2'
 // include { GIANA } from '../../modules/local/giana'
 
 /*
@@ -34,14 +34,24 @@ workflow CLUSTER {
     // 1. Run GLIPH2
 
     GLIPH2( samplesheet_utf8,
-            file("${params.data_dir}/test_data/*") )
+            file(params.data_dir),
+            file(params.ref_files),
+            params.project_name,
+            params.local_min_pvalue,
+            params.p_depth,
+            params.global_convergence_cutoff,
+            params.simulation_depth,
+            params.kmer_min_depth,
+            params.local_min_OVE,
+            params.algorithm,
+            params.all_aa_interchangeable )
 
     // 2. Plot GLIPH2 results
-    // PLOT_GLIPH2(
-    //     GLIPH2.out.clusters,
-    //     GLIPH2.out.cluster_stats,
-    //     meta_data
-    //     )
+    PLOT_GLIPH2(
+        params.gliph2_report_template,
+        GLIPH2.out.clusters,
+        GLIPH2.out.cluster_stats
+        )
     
     // emit:
     // cluster_html

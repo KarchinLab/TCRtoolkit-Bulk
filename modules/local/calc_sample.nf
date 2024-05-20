@@ -1,10 +1,10 @@
 process CALC_SAMPLE {
-    tag "${sample_meta[1]}"
+    tag "${sample_meta[0]}"
     label 'process_single'
 
     container "domebraccia/bulktcr:1.0"
 
-    publishDir "${params.output}/${params.project_name}/sample/", mode: "copy", overwrite: "true"
+    publishDir "${params.output}/sample_output/", mode: "copy", overwrite: "true"
 
     input:
     tuple val(sample_meta), path(count_table)

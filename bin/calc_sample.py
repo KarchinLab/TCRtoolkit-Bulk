@@ -26,10 +26,10 @@ parser.add_argument('-c', '--count_table',
                     metavar='count_table', 
                     type=argparse.FileType('r'), 
                     help='counts file in TSV format')
-# parser.add_argument('-m', '--meta_data',
-#                     metavar='meta_data',
-#                     type=argparse.FileType('r'),
-#                     help='metadata file in CSV format')
+# parser.add_argument('-d', '--data_dir',
+#                     metavar='data_dir',
+#                     type=str,
+#                     help='path to data directory')
 
 args = parser.parse_args() 
 

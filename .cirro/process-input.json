@@ -1,7 +1,11 @@
 {
-    "cluster_lvl": "$.params.dataset.paramJson.cluster_lvl",
+    "sample_lvl": "$.params.dataset.paramJson.sample_lvl",
     "compare_lvl": "$.params.dataset.paramJson.compare_lvl",
+    "cluster_lvl": "$.params.dataset.paramJson.cluster_lvl",
     "data_dir": "$.params.inputs[0].s3|/data/",
+    "kmer_min_depth": "$.params.dataset.paramJson.kmer_min_depth",
+    "local_min_OVE": "$.params.dataset.paramJson.local_min_OVE",
+    "local_min_pvalue": "$.params.dataset.paramJson.local_min_pvalue",
     "output": "$.params.dataset.s3|/data/",
-    "sample_lvl": "$.params.dataset.paramJson.sample_lvl"
+    "p_depth": "$.params.dataset.paramJson.p_depth"
 }

@@ -3,7 +3,7 @@ process SAMPLESHEET_CHECK {
 
     container "domebraccia/bulktcr:1.0"
 
-    publishDir "${params.output}/${params.project_name}/input_check/", mode: "copy", overwrite: "true"
+    publishDir "${params.output}/pipeline_info/", mode: "copy", overwrite: "true"
 
     input:
     path samplesheet

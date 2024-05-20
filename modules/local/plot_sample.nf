@@ -5,7 +5,7 @@ process PLOT_SAMPLE {
 
     container "domebraccia/bulktcr:1.0"
 
-    publishDir "${params.output}/${params.project_name}/sample/", mode: "copy", overwrite: "true"
+    publishDir "${params.output}/reports/", mode: "copy", overwrite: "true"
     
     input:
     path sample_table
