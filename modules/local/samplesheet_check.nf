@@ -1,7 +1,7 @@
 process SAMPLESHEET_CHECK {
     tag "${samplesheet}"
 
-    container "domebraccia/bulktcr:1.0"
+    container "karchinlab/bulktcr:1.0"
 
     publishDir "${params.output}/pipeline_info/", mode: "copy", overwrite: "true"
 
