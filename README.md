@@ -21,7 +21,7 @@ The nextflow executable is now available to run on the command line. The executa
 
 2. Docker
 
-`TCRtoolkit` runs in Docker containers available [here](https://hub.docker.com/repository/docker/domebraccia/bulktcr/general). Depending on what operating system you are running (Linux, MacOS, WSL), please refer to the [Docker documentation](https://docs.docker.com/engine/install/) for installation instructions.
+`TCRtoolkit` runs in Docker containers available [here](https://hub.docker.com/repository/docker/karchinlab/bulktcr/general). Depending on what operating system you are running (Linux, MacOS, WSL), please refer to the [Docker documentation](https://docs.docker.com/engine/install/) for installation instructions.
 
 3. TCRtoolkit
 
