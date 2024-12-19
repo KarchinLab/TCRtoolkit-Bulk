@@ -2,7 +2,7 @@ process GLIPH2 {
 
     label 'process_single'
     publishDir "${params.output}/gliph2_output", mode: 'copy'
-    container "domebraccia/bulktcr:1.0"
+    container "karchinlab/bulktcr:1.0"
 
     input:
     path samplesheet_utf8
