@@ -22,8 +22,8 @@ process GLIPH2 {
     val all_aa_interchangeable
 
     output:
-    path "$data_folder/${params.project_name}_cluster.csv", emit: 'clusters'
-    path "$data_folder/${params.project_name}_cluster.txt", emit: 'cluster_stats'
+    path "${params.project_name}_cluster.csv", emit: 'clusters'
+    path "${params.project_name}_cluster.txt", emit: 'cluster_stats'
 
     script:
     """
