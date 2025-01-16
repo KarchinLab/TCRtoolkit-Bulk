@@ -3,7 +3,7 @@ process PLOT_SAMPLE {
     tag "${sample_stats_csv}"
     label 'plot_sample'
 
-    container "domebraccia/bulktcr:1.0"
+    container "karchinlab/bulktcr:1.0"
 
     publishDir "${params.output}/reports/", mode: "copy", overwrite: "true"
     

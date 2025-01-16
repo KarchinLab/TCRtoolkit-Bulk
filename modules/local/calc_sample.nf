@@ -2,7 +2,7 @@ process CALC_SAMPLE {
     tag "${sample_meta[0]}"
     label 'process_single'
 
-    container "domebraccia/bulktcr:1.0"
+    container "karchinlab/bulktcr:1.0"
 
     publishDir "${params.output}/sample_output/", mode: "copy", overwrite: "true"
 

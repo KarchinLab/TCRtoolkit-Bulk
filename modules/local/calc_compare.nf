@@ -4,7 +4,7 @@ process CALC_COMPARE {
 
     // beforeScript 'export DOCKER_OPTS="-v $${params.data_dir}:$${params.data_dir}"'
 
-    container "domebraccia/bulktcr:1.0"
+    container "karchinlab/bulktcr:1.0"
 
     publishDir "${params.output}/compare_output/", mode: "copy", overwrite: "true"
     
