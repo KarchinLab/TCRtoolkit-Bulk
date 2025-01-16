@@ -4,8 +4,8 @@ process GLIPH2 {
     publishDir "${params.output}/gliph2_output", mode: 'copy'
     container "domebraccia/bulktcr:1.0"
 
-    cpus 16
-    memory 64.GB
+    cpus 4
+    memory 16.GB
 
     input:
     path samplesheet_utf8
