@@ -9,6 +9,8 @@ process PROCESS_SAMPLESHEET {
 
     input:
     path samplesheet_utf8
+    path data_folder
+    val project_name
 
     output:
     path "${params.project_name}_tcr.txt", emit: 'processed_samplesheet'
@@ -17,7 +19,7 @@ process PROCESS_SAMPLESHEET {
     """
     
     # Prep _tcr.txt file
-    prep_gliph2_tcr.py ${params.data_folder} ${params.project_name} $samplesheet_utf8
+    prep_gliph2_tcr.py $data_folder $project_name $samplesheet_utf8
 
     """
 
