@@ -39,13 +39,13 @@ process TURBO_GLIPH2 {
         n_cores = ${task.cpus}
     )
 
-    write.csv(result\$motif_enrichment\$all_motifs, "all_motifs.csv", row.names = FALSE)
-    write.csv(result\$motif_enrichment\$selected_motifs, "selected_motifs.csv", row.names = FALSE)
-    write.csv(result\$global_enrichment, "global_enrichment.csv", row.names = FALSE)
-    write.csv(result\$connections, "connections.csv", row.names = FALSE)
-    write.csv(result\$cluster_properties, "cluster_properties.csv", row.names = FALSE)
-    write.csv(result\$cluster_list, "cluster_list.csv", row.names = FALSE)
-    write.table(result\$parameters, "parameters.txt", sep = "\t", row.names = FALSE, quote = FALSE, stringsAsFactors = FALSE)
+    write.csv(result$motif_enrichment$all_motifs, "all_motifs.csv", row.names = FALSE)
+    write.csv(result$motif_enrichment$selected_motifs, "selected_motifs.csv", row.names = FALSE)
+    write.csv(result$global_enrichment, "global_enrichment.csv", row.names = FALSE)
+    write.csv(result$connections, "connections.csv", row.names = FALSE)
+    write.csv(result$cluster_properties, "cluster_properties.csv", row.names = FALSE)
+    write.csv(result$cluster_list, "cluster_list.csv", row.names = FALSE)
+    write.table(result$parameters, "parameters.txt", sep = "\t", row.names = FALSE, quote = FALSE, stringsAsFactors = FALSE)
 
     """
 
