@@ -53,7 +53,9 @@ df = df[['aminoAcid', 'vGeneName', 'jGeneName', 'CDR3a', 'subject:condition', 'c
 df = df.rename(columns={'aminoAcid': 'CDR3b', 
                         'vGeneName': 'TRBV',
                         'jGeneName': 'TRBJ',
-                        'count (templates/reads)': 'count'})
+                        # 'HLA_column_name': 'HLA', if hla_file input exists, incorporate it here
+                        'subject:condition': 'patient',
+                        'count (templates/reads)': 'counts'})
 
 # Filter out rows of the df with missing CDR3b values
 df = df[df['CDR3b'].notna()]
