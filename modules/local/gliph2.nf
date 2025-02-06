@@ -2,7 +2,7 @@ process GLIPH2 {
 
     label 'process_single'
     publishDir "${params.output}/gliph2_output", mode: 'copy'
-    container "karchinlab/bulktcr:1.0"
+    container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     cpus 4
     memory 16.GB

@@ -2,7 +2,7 @@ process CALC_SAMPLE {
     tag "${sample_meta[0]}"
     label 'process_single'
 
-    container "karchinlab/bulktcr:1.0"
+    container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     publishDir "${params.output}/sample_output/", mode: "copy", overwrite: "true"
 
