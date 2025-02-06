@@ -49,7 +49,9 @@ workflow CLUSTER {
     //         params.all_aa_interchangeable )
 
     PROCESS_SAMPLESHEET(
-        samplesheet_utf8
+        samplesheet_utf8,
+        file(params.data_dir),
+        params.project_name
     )
 
     TURBO_GLIPH2(
