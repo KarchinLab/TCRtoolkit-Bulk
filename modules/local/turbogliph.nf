@@ -25,7 +25,7 @@ process TURBO_GLIPH2 {
 
     library(turboGliph)
 
-    df <- read.csv("$processed_samplesheet", sep = '\t', stringsAsFactors = FALSE, check.names = FALSE)
+    df <- read.csv("$processed_samplesheet", sep = '\\t', stringsAsFactors = FALSE, check.names = FALSE)
 
     result <- turboGliph::gliph2(
         cdr3_sequences = df,
@@ -45,7 +45,7 @@ process TURBO_GLIPH2 {
     write.csv(result[["connections"]], "connections.csv", row.names = FALSE)
     write.csv(result[["cluster_properties"]], "cluster_properties.csv", row.names = FALSE)
     write.csv(result[["cluster_list"]], "cluster_list.csv", row.names = FALSE)
-    write.table(result[["parameters"]], "parameters.txt", sep = "\t", row.names = FALSE, quote = FALSE, stringsAsFactors = FALSE)
+    write.table(result[["parameters"]], "parameters.txt", sep = "\\t", row.names = FALSE, quote = FALSE, stringsAsFactors = FALSE)
 
     """
 
