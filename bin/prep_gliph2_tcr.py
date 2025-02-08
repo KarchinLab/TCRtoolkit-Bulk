@@ -61,5 +61,5 @@ df = df.rename(columns={'aminoAcid': 'CDR3b',
 df = df[df['CDR3b'].notna()]
 
 # Write df to csv with the name ${project_name}_tcr.txt
-df.to_csv(args.project_name + "_tcr.txt", sep="\t", index=False, header=False)
+df.to_csv(args.project_name + "_tcr.txt", sep="\t", index=False, header=True)
 
