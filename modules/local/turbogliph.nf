@@ -3,8 +3,8 @@ process TURBO_GLIPH2 {
     publishDir "${params.output}/turbo_gliph2", mode: 'copy'
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
-    cpus 4
-    memory 8.GB
+    cpus 8
+    memory 16.GB
 
     input:
     // path processed_samplesheet
@@ -32,6 +32,7 @@ process TURBO_GLIPH2 {
     library(turboGliph)
 
     df <- read.csv("${params.project_name}_tcr.txt", sep = "\t", stringsAsFactors = FALSE, check.names = FALSE)
+    df <- head(df, 10000)
 
     result <- turboGliph::gliph2(
         cdr3_sequences = df,
