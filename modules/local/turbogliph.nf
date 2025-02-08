@@ -10,7 +10,6 @@ process TURBO_GLIPH2 {
     // path processed_samplesheet
     path samplesheet_utf8
     path data_folder
-    val project_name
 
     output:
     path "all_motifs.csv", emit: 'all_motifs'
@@ -24,7 +23,7 @@ process TURBO_GLIPH2 {
     script:
     """
     # Prep _tcr.txt file
-    prep_gliph2_tcr.py $data_folder $project_name $samplesheet_utf8
+    prep_gliph2_tcr.py $data_folder ${params.project_name} $samplesheet_utf8
 
     # R script starts here
     cat > run_gliph2.R <<EOF
@@ -32,7 +31,7 @@ process TURBO_GLIPH2 {
 
     library(turboGliph)
 
-    df <- read.csv("${project_name}_tcr.txt", sep = "\t", stringsAsFactors = FALSE, check.names = FALSE)
+    df <- read.csv("${params.project_name}_tcr.txt", sep = "\t", stringsAsFactors = FALSE, check.names = FALSE)
 
     result <- turboGliph::gliph2(
         cdr3_sequences = df,
