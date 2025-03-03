@@ -32,7 +32,6 @@ process TURBO_GLIPH2 {
     library(turboGliph)
 
     df <- read.csv("${params.project_name}_tcr.txt", sep = "\t", stringsAsFactors = FALSE, check.names = FALSE)
-    df <- head(df, 10000)
 
     result <- turboGliph::gliph2(
         cdr3_sequences = df,
