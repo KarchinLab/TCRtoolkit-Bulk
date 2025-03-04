@@ -9,15 +9,6 @@ WORKDIR /tmp
 RUN mamba env update -n base --file env.yml
 
 # Install system dependencies
-# RUN apt-get update \
-#     && apt-get install -y --no-install-recommends \
-#     curl \
-#     libcurl4-openssl-dev \
-#     libxml2-dev \
-#     libssl-dev \
-#     zlib1g-dev \
-#     && apt-get clean \
-#     && rm -rf /var/lib/apt/lists/*
 RUN apt-get update \
     && apt-get install -y curl \
     && apt-get clean \
