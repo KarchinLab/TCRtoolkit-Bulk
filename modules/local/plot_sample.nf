@@ -1,7 +1,7 @@
 // process to plot sample level statistics
 process PLOT_SAMPLE {
     tag "${sample_stats_csv}"
-    label 'plot_sample'
+    label 'process_single'
 
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 

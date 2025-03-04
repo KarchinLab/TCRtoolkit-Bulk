@@ -1,7 +1,7 @@
 process PLOT_GLIPH2 {
     
     // tag "${}"
-    label 'plot_gliph2'
+    label 'process_single'
     container "ghcr.io/break-through-cancer/bulktcr:latest"
     publishDir "${params.output}/reports/", mode: "copy", overwrite: "true"
 

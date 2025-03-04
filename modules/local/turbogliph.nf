@@ -1,6 +1,6 @@
 process TURBO_GLIPH2 {
-    label 'process_single'
-    publishDir "${params.output}/turbo_gliph2", mode: 'copy'
+    label 'process_medium'
+    // publishDir "${params.output}/turbo_gliph2", mode: 'copy'
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:

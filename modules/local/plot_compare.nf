@@ -1,6 +1,6 @@
 process PLOT_COMPARE {
     // tag "${jaccard_mat}"
-    label 'plot_compare'
+    label 'process_single'
 
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 

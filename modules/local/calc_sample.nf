@@ -4,7 +4,7 @@ process CALC_SAMPLE {
 
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
-    publishDir "${params.output}/sample_output/", mode: "copy", overwrite: "true"
+    // publishDir "${params.output}/sample_output/", mode: "copy", overwrite: "true"
 
     input:
     tuple val(sample_meta), path(count_table)
