@@ -3,9 +3,6 @@ process TURBO_GLIPH2 {
     publishDir "${params.output}/turbo_gliph2", mode: 'copy'
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
-    cpus 8
-    memory 16.GB
-
     input:
     // path processed_samplesheet
     path samplesheet_utf8
