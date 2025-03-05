@@ -1,8 +1,8 @@
 process PLOT_COMPARE {
     // tag "${jaccard_mat}"
-    label 'plot_compare'
+    label 'process_single'
 
-    container "karchinlab/bulktcr:1.0"
+    container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     publishDir "${params.output}/reports/", mode: "copy", overwrite: "true"
 
