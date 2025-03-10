@@ -1,9 +1,9 @@
 // process to plot sample level statistics
 process PLOT_SAMPLE {
     tag "${sample_stats_csv}"
-    label 'plot_sample'
+    label 'process_single'
 
-    container "karchinlab/bulktcr:1.0"
+    container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     publishDir "${params.output}/reports/", mode: "copy", overwrite: "true"
     
