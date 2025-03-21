@@ -34,6 +34,16 @@ workflow SAMPLE {
         .collectFile(name: 'v_family.csv', sort: true,
                      storeDir: "${params.output}/sample")
         .set { v_family_csv }
+        
+    SAMPLE_CALC.out.d_family_csv
+        .collectFile(name: 'd_family.csv', sort: true,
+                     storeDir: "${params.output}/sample")
+        .set { d_family_csv }
+        
+    SAMPLE_CALC.out.j_family_csv
+        .collectFile(name: 'j_family.csv', sort: true,
+                     storeDir: "${params.output}/sample")
+        .set { j_family_csv }
 
     /////// =================== PLOT SAMPLE ===================  ///////
 
