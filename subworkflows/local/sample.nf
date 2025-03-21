@@ -5,8 +5,8 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { CALC_SAMPLE } from '../../modules/local/calc_sample.nf'
-include { PLOT_SAMPLE } from '../../modules/local/plot_sample.nf'
+include { SAMPLE_CALC } from '../../modules/local/calc_sample.nf'
+include { SAMPLE_PLOT } from '../../modules/local/plot_sample.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,21 +23,21 @@ workflow SAMPLE {
 
     /////// =================== CALC SAMPLE ===================  ///////
 
-    CALC_SAMPLE( sample_map )
+    SAMPLE_CALC( sample_map )
 
-    CALC_SAMPLE.out.sample_csv
+    SAMPLE_CALC.out.sample_csv
         .collectFile(name: 'sample_stats.csv', sort: true, 
-                     storeDir: "${params.output}/sample_output")
+                     storeDir: "${params.output}/sample")
         .set { sample_stats_csv }
 
-    CALC_SAMPLE.out.v_family_csv
+    SAMPLE_CALC.out.v_family_csv
         .collectFile(name: 'v_family.csv', sort: true,
-                     storeDir: "${params.output}/sample_output")
+                     storeDir: "${params.output}/sample")
         .set { v_family_csv }
 
     /////// =================== PLOT SAMPLE ===================  ///////
 
-    PLOT_SAMPLE(
+    SAMPLE_PLOT (
         file(params.samplesheet),
         file(params.sample_stats_template),
         sample_stats_csv,
