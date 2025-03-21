@@ -4,18 +4,18 @@ process TURBO_GLIPH2 {
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:
-    // path processed_samplesheet
     path samplesheet_utf8
     path data_folder
 
     output:
+    path "${params.project_name}_tcr.txt"
     path "all_motifs.csv", emit: 'all_motifs'
     path "clone_network.csv", emit: 'clone_network'
     path "cluster_member_details.csv", emit: 'cluster_member_details'
     path "convergence_groups.csv", emit: 'convergence_groups'
     path "global_similarities.csv", emit: 'global_similarities'
     path "local_similarities.csv", emit: 'local_similarities'
-    path "parameter.txt", emit: 'parameters'
+    path "parameter.txt"
     
     script:
     """
