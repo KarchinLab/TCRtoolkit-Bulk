@@ -2,8 +2,6 @@ process COMPARE_CALC {
     label 'process_single'
 
     container "ghcr.io/break-through-cancer/bulktcr:latest"
-
-    publishDir "${params.output}/compare_output/", mode: "copy", overwrite: "true"
     
     input:
     path sample_utf8
