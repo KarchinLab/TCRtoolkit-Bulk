@@ -1,8 +1,5 @@
-process CALC_COMPARE {
-    // tag "${sample_utf8}"
+process COMPARE_CALC {
     label 'process_single'
-
-    // beforeScript 'export DOCKER_OPTS="-v $${params.data_dir}:$${params.data_dir}"'
 
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
@@ -23,5 +20,4 @@ process CALC_COMPARE {
         -s $sample_utf8 \
         -p $projectDir 
     """
-
 }

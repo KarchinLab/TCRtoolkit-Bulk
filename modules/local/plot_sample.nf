@@ -1,5 +1,5 @@
 // process to plot sample level statistics
-process PLOT_SAMPLE {
+process SAMPLE_PLOT {
     tag "${sample_stats_csv}"
     label 'process_single'
 
@@ -36,5 +36,4 @@ process PLOT_SAMPLE {
     """
     echo "1"
     """
-    
-    }
+}

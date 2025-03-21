@@ -1,10 +1,8 @@
-process CALC_SAMPLE {
+process SAMPLE_CALC {
     tag "${sample_meta[0]}"
     label 'process_single'
 
     container "ghcr.io/break-through-cancer/bulktcr:latest"
-
-    // publishDir "${params.output}/sample_output/", mode: "copy", overwrite: "true"
 
     input:
     tuple val(sample_meta), path(count_table)
