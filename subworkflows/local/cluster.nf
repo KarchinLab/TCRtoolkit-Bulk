@@ -5,9 +5,9 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { GLIPH2_TURBOGLIPH } from '../../modules/local/turbogliph'
-include { GLIPH2_PLOT } from '../../modules/local/plot_gliph2'
-include { TCRDIST3_MATRIX } from '../../modules/local/tcrdist3_matrix.nf'
+include { GLIPH2_TURBOGLIPH } from '../../modules/local/gliph2_turbogliph'
+include { GLIPH2_PLOT } from '../../modules/local/gliph2_plot'
+include { TCRDIST3_MATRIX } from '../../modules/local/tcrdist3_matrix'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

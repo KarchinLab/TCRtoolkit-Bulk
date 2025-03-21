@@ -5,8 +5,8 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { SAMPLE_CALC } from '../../modules/local/calc_sample.nf'
-include { SAMPLE_PLOT } from '../../modules/local/plot_sample.nf'
+include { SAMPLE_CALC } from '../../modules/local/sample_calc'
+include { SAMPLE_PLOT } from '../../modules/local/sample_plot'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

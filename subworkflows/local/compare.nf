@@ -5,8 +5,8 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { COMPARE_CALC  } from '../../modules/local/calc_compare.nf'
-include { COMPARE_PLOT  } from '../../modules/local/plot_compare.nf'
+include { COMPARE_CALC  } from '../../modules/local/compare_calc'
+include { COMPARE_PLOT  } from '../../modules/local/compare_plot'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
