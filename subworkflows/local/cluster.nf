@@ -5,8 +5,9 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { TURBO_GLIPH2   } from '../../modules/local/turbogliph'
-include { PLOT_GLIPH2   } from '../../modules/local/plot_gliph2'
+include { GLIPH2_TURBOGLIPH } from '../../modules/local/turbogliph'
+include { GLIPH2_PLOT } from '../../modules/local/plot_gliph2'
+include { TCRDIST3_MATRIX } from '../../modules/local/tcrdist3_matrix.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -18,22 +19,28 @@ workflow CLUSTER {
 
     take:
     samplesheet_utf8
+    sample_map
 
     main:
 
     // 1. Run GLIPH2
 
-    TURBO_GLIPH2(
+    GLIPH2_TURBOGLIPH(
         samplesheet_utf8,
-        file(params.data_dir),
+        file(params.data_dir)
     )
 
     // 2. Plot GLIPH2 results
-    // PLOT_GLIPH2(
+    // GLIPH2_PLOT(
     //     params.gliph2_report_template,
-    //     GLIPH2.out.clusters,
-    //     GLIPH2.out.cluster_stats
+    //     GLIPH2_TURBOGLIPH.out.cluster_member_details,
+    //     GLIPH2_TURBOGLIPH.out.convergence_groups
     //     )
+    
+    TCRDIST3_MATRIX(
+        sample_map,
+        file(params.db_path)
+    )
     
     // emit:
     // cluster_html
