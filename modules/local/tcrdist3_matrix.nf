@@ -1,6 +1,7 @@
 process TCRDIST3_MATRIX {
     tag "${sample_meta[0]}"
     label 'process_high'
+    label 'process_high_memory'
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:
