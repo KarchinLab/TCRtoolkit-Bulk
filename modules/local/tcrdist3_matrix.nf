@@ -18,9 +18,5 @@ process TCRDIST3_MATRIX {
 
     # Run tcrdist3 on input
     tcrdist3_matrix.py ${count_table} ${ref_db} ${task.cpus}
-
-    # Move the results to the corresponding output folder with basename inside 'tcrdist3'
-    # mkdir -p ${params.output}/tcrdist3/\${basename}
-    # mv *.png ${params.output}/tcrdist3/\${basename}/
     """
 }
