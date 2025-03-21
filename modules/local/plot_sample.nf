@@ -4,8 +4,6 @@ process SAMPLE_PLOT {
     label 'process_single'
 
     container "ghcr.io/break-through-cancer/bulktcr:latest"
-
-    publishDir "${params.output}/reports/", mode: "copy", overwrite: "true"
     
     input:
     path sample_table
