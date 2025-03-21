@@ -1,7 +1,6 @@
 process SAMPLE_CALC {
     tag "${sample_meta[0]}"
     label 'process_single'
-
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:

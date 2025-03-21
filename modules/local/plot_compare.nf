@@ -1,6 +1,5 @@
 process COMPARE_PLOT {
     label 'process_single'
-
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:
