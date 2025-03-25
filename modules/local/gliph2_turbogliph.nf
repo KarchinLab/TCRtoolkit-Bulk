@@ -1,5 +1,7 @@
 process GLIPH2_TURBOGLIPH {
-    label 'process_medium'
+    label 'process_high'
+    label 'process_high_compute'
+    label 'process_high_memory'
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:
