@@ -206,43 +206,52 @@ $$
 where $N_{k}$ is the number of TCRs that use the $k$ th V gene, and T is the total number of TCRs in the sample.
 
 ```{python}
-## code adapted from https://www.moritzkoerber.com/posts/plotly-grouped-stacked-bar-chart/
-colors = ["#fafa70","#fdef6b","#ffe566","#ffda63","#ffd061","#ffc660","#ffbb5f","#fdb15f","#fba860","#f79e61","#f39562","#ef8c63","#e98365","#e37b66","#dd7367","#d66b68","#ce6469","#c65e6a","#bd576b","#b4526b","#ab4c6b","#a1476a","#974369","#8c3e68","#823a66","#773764","#6d3361","#62305e","#572c5a","#4d2956"]
+# Colors for V genes
+colors = ["#fafa70","#fdef6b","#ffe566","#ffda63","#ffd061","#ffc660","#ffbb5f","#fdb15f","#fba860","#f79e61",
+          "#f39562","#ef8c63","#e98365","#e37b66","#dd7367","#d66b68","#ce6469","#c65e6a","#bd576b","#b4526b",
+          "#ab4c6b","#a1476a","#974369","#8c3e68","#823a66","#773764","#6d3361","#62305e","#572c5a","#4d2956"]
 
-## calculate calulate proportions and add to v_family_long
-v_family_long = pd.melt(v_family, id_vars=['patient_id', 'timepoint', 'origin'], value_vars=v_family.columns[3:], var_name='v_gene', value_name='count')
+# Reshape data: Melt dataframe
+v_family_long = pd.melt(v_family, id_vars=['patient_id', 'timepoint', 'origin'], 
+                         value_vars=v_family.columns[3:], var_name='v_gene', value_name='count')
+
+# Compute proportions
 v_family_long['proportion'] = v_family_long.groupby(['patient_id', 'timepoint', 'origin'])['count'].transform(lambda x: x / x.sum())
 
-## add in the total number of v genes for each sample
+# Add total V gene count per sample
 total_v_genes = v_family_long.groupby(['patient_id', 'timepoint', 'origin'])['count'].sum().reset_index()
 total_v_genes.columns = ['patient_id', 'timepoint', 'origin', 'total_v_genes']
 v_family_long = pd.merge(v_family_long, total_v_genes, on=['patient_id', 'timepoint', 'origin'])
 
-for patient in v_family_long.patient_id.unique().tolist():
-    current = v_family_long[v_family_long.patient_id == patient]
+# Verify proportions sum to 1
+assert all(v_family_long.groupby(['patient_id', 'timepoint', 'origin'])['proportion'].sum().round(5) == 1), "Proportion sums incorrect!"
+
+# Loop over patients to create separate plots
+for patient in v_family_long['patient_id'].unique():
+    current = v_family_long[v_family_long['patient_id'] == patient]
     fig = go.Figure()
+    
+    # Set up layout
     fig.update_layout(
         template="simple_white",
-        title_text="Patient: " + str(patient),
-        xaxis=dict(title_text="timepont"),
-        yaxis=dict(title_text="proportion"),
+        title_text=f"Patient: {patient}",
+        xaxis=dict(title_text="Timepoint - Origin"),
+        yaxis=dict(title_text="Proportion"),
         barmode="stack",
     )
 
-    for g, c in zip(current.v_gene.unique(), colors):
-        plot_df = current[current.v_gene == g]
-        if g == 'TCRBV30':
-            fig.add_trace(
-                go.Bar(x=[plot_df.timepoint, plot_df.origin], 
-                       y=plot_df.proportion, name=g, marker_color=c,
-                       text=plot_df['total_v_genes'], textposition='outside'
-                      )
-                )
-        else:
-            fig.add_trace(
-                go.Bar(x=[plot_df.timepoint, plot_df.origin], 
-                       y=plot_df.proportion, name=g, marker_color=c
-                       )
+    # Add each V gene as a separate bar trace
+    for g, c in zip(current['v_gene'].unique(), colors):
+        plot_df = current[current['v_gene'] == g]
+        fig.add_trace(
+            go.Bar(
+                x=plot_df['timepoint'] + " - " + plot_df['origin'],  # Fix x-axis issue
+                y=plot_df['proportion'],
+                name=g,
+                marker_color=c,
+                text=str(plot_df['total_v_genes'].iloc[0]) if g == 'TCRBV30' else "",  # Fix text issue
+                textposition='outside' if g == 'TCRBV30' else None
+            )
         )
 
     fig.show()
