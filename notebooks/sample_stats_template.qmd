@@ -223,8 +223,8 @@ for patient in v_family_long.patient_id.unique().tolist():
     fig = go.Figure()
     fig.update_layout(
         template="simple_white",
-        title_text="Patient: " + str(patient),
-        xaxis=dict(title_text="timepont"),
+        title_text=f"Patient: {patient}",
+        xaxis=dict(title_text="timepoint"),
         yaxis=dict(title_text="proportion"),
         barmode="stack",
     )
