@@ -5,7 +5,7 @@
 Thanks for checking out `TCRtoolkit-Bulk`, the platform for bulk T Cell Repertoire analysis! `TCRtoolkit-Bulk` is wrapped in NextFlow, written in python, and uses Docker to manage dependencies.
 
 <p align="center">
-    <img src=assets/diagram.svg/>
+    <img src=assets/TCR_Bulk_profiling.png/>
 </p>
 
 We currently support bulk TCRseq data from Adaptive Biotechnologies.
