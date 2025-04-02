@@ -59,7 +59,8 @@ workflow TCRTOOLKIT_BULK {
 
     // Running clustering analysis
     if (levels.contains('cluster') || levels.contains('complete')) {
-        CLUSTER ( INPUT_CHECK.out.samplesheet_utf8 )
+        CLUSTER ( INPUT_CHECK.out.samplesheet_utf8,
+                  INPUT_CHECK.out.sample_map )
     }
     
 }

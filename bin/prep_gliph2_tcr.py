@@ -31,35 +31,39 @@ print("samplesheet: ", args.samplesheet)
 samplesheet = pd.read_csv(args.samplesheet, header=0)
 data_dir = args.data_dir + "/"
 tsv_files = glob.glob(os.path.join(data_dir, "*.tsv"))
+tsv_files = [os.path.abspath(file) for file in tsv_files]
 
-# Load each file as element in dictionary
-tsv_dict = {}
-for file in tsv_files:
-    # read each tsv into entry of a dictionary
-    tsv_dict[file] = pd.read_csv(file, sep="\t", header=0)
+dfs = []
+for index, row in samplesheet.iterrows():
+    file_path = row['file']
+    print(f"Loading {file_path}")
     
-    # add a column to current df tsv_dict[file] with sample_id from samplesheet
-    subject_id = samplesheet.loc[samplesheet.file == file]['subject_id']
-    condition = samplesheet.loc[samplesheet.file == file]['sample']
-    tsv_dict[file]['subject:condition'] = subject_id + ':' + condition
+    # Read the TSV file into a dataframe
+    df = pd.read_csv(file_path, sep="\t", header=0)
     
+    # Get metadata
+    subject_id = row['subject_id']
+    timepoint = row['timepoint']
+    origin = row['origin']
+    
+    # Add patient column
+    df['patient'] = f"{subject_id}:{timepoint}_{origin}"
+    
+    # Select relevant columns
+    df = df[['aminoAcid', 'vGeneName', 'jGeneName', 'patient', 'count (templates/reads)']]
+    dfs.append(df)
 
-# Concatenate all dataframes in dictionary
-df = pd.concat(tsv_dict.values())
-df['CDR3a'] = 'NA'
-df = df[['aminoAcid', 'vGeneName', 'jGeneName', 'CDR3a', 'subject:condition', 'count (templates/reads)']]
 
-# Rename columns
-df = df.rename(columns={'aminoAcid': 'CDR3b', 
-                        'vGeneName': 'TRBV',
-                        'jGeneName': 'TRBJ',
-                        # 'HLA_column_name': 'HLA', if hla_file input exists, incorporate it here
-                        'subject:condition': 'patient',
-                        'count (templates/reads)': 'counts'})
+# Concatenate all the dataframes into one
+df_combined = pd.concat(dfs)
 
-# Filter out rows of the df with missing CDR3b values
-df = df[df['CDR3b'].notna()]
+# Rename columns as required
+df_combined = df_combined.rename(columns={
+    'aminoAcid': 'CDR3b',
+    'vGeneName': 'TRBV',
+    'jGeneName': 'TRBJ',
+    'count (templates/reads)': 'counts'
+})
+df_combined = df_combined[df_combined['CDR3b'].notna()]
 
-# Write df to csv with the name ${project_name}_tcr.txt
-df.to_csv(args.project_name + "_tcr.txt", sep="\t", index=False, header=True)
-
+df_combined.to_csv(f"{args.project_name}_tcr.txt", sep="\t", index=False, header=True)

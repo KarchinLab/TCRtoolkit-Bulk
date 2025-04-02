@@ -5,8 +5,8 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { CALC_COMPARE  } from '../../modules/local/calc_compare.nf'
-include { PLOT_COMPARE  } from '../../modules/local/plot_compare.nf'
+include { COMPARE_CALC  } from '../../modules/local/compare_calc'
+include { COMPARE_PLOT  } from '../../modules/local/compare_plot'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -24,13 +24,13 @@ workflow COMPARE {
     data_dir
 
     main:
-    CALC_COMPARE( sample_utf8,
+    COMPARE_CALC( sample_utf8,
                   data_dir )
 
-    PLOT_COMPARE( sample_utf8,
-                  CALC_COMPARE.out.jaccard_mat,
-                  CALC_COMPARE.out.sorensen_mat,
-                  CALC_COMPARE.out.morisita_mat,
+    COMPARE_PLOT( sample_utf8,
+                  COMPARE_CALC.out.jaccard_mat,
+                  COMPARE_CALC.out.sorensen_mat,
+                  COMPARE_CALC.out.morisita_mat,
                   file(params.compare_stats_template),
                   project_name
                   )

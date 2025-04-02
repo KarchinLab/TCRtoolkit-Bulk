@@ -1,11 +1,8 @@
 // process to plot sample level statistics
-process PLOT_SAMPLE {
+process SAMPLE_PLOT {
     tag "${sample_stats_csv}"
     label 'process_single'
-
     container "ghcr.io/break-through-cancer/bulktcr:latest"
-
-    publishDir "${params.output}/reports/", mode: "copy", overwrite: "true"
     
     input:
     path sample_table
@@ -36,5 +33,4 @@ process PLOT_SAMPLE {
     """
     echo "1"
     """
-    
-    }
+}
