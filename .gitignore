@@ -13,6 +13,8 @@ notebooks/*.html
 
 assets/TCRseq_metadata_templates/*
 
+.DS_Store
+
 ## Python
 bin/__pycache__/*
 scripts/*

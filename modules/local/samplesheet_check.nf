@@ -1,10 +1,7 @@
 process SAMPLESHEET_CHECK {
     tag "${samplesheet}"
     label 'process_single'
-
     container "ghcr.io/break-through-cancer/bulktcr:latest"
-
-    publishDir "${params.output}/pipeline_info/", mode: "copy", overwrite: "true"
 
     input:
     path samplesheet

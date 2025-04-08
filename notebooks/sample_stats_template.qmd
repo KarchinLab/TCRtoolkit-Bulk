@@ -67,7 +67,7 @@ print('Date and time:         ' + str(datetime.datetime.now()))
 # 4. Loading data
 
 ## reading combined repertoire statistics
-df = pd.read_csv(sample_stats_csv, sep=',', header=0, 
+df = pd.read_csv(sample_stats_csv, sep=',', header=None, 
                  names=['sample_id', 'patient_id', 'timepoint', 'origin',
                         'num_clones', 'num_TCRs', 'simpson_index', 'simpson_index_corrected', 'clonality',
                         'num_in', 'num_out', 'num_stop', 'pct_prod', 'pct_out', 'pct_stop', 'pct_nonprod',
@@ -75,12 +75,12 @@ df = pd.read_csv(sample_stats_csv, sep=',', header=0,
 # print('-- Imported sample_stats_csv as `df`...')
 
 ## reading sample metadata
-meta = pd.read_csv(sample_table, sep=',', header=0, index_col=None,
+meta = pd.read_csv(sample_table, sep=',', header=None, index_col=None,
                    names=['sample_id', 'file', 'patient_id', 'timepoint', 'origin'])
 # print('-- Imported sample_table as `meta`...')
 
 ## reading V gene family usage 
-v_family = pd.read_csv(v_family_csv, sep=',', header=0, index_col=None,
+v_family = pd.read_csv(v_family_csv, sep=',', header=None, index_col=None,
                        names=['patient_id', 'timepoint', 'origin', 'TCRBV01', 
                               'TCRBV02', 'TCRBV03', 'TCRBV04', 'TCRBV05', 'TCRBV06',
                               'TCRBV07', 'TCRBV08', 'TCRBV09', 'TCRBV10', 'TCRBV11',
@@ -223,8 +223,8 @@ for patient in v_family_long.patient_id.unique().tolist():
     fig = go.Figure()
     fig.update_layout(
         template="simple_white",
-        title_text="Patient: " + str(patient),
-        xaxis=dict(title_text="timepont"),
+        title_text=f"Patient: {patient}",
+        xaxis=dict(title_text="timepoint"),
         yaxis=dict(title_text="proportion"),
         barmode="stack",
     )
