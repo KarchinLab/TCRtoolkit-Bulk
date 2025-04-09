@@ -15,6 +15,6 @@ process COMPARE_CALC {
     """
     calc_compare.py \
         -s $sample_utf8 \
-        -p $projectDir 
+        -d $data_dir
     """
 }

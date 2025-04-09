@@ -24,8 +24,7 @@ workflow COMPARE {
     data_dir
 
     main:
-    COMPARE_CALC( sample_utf8,
-                  data_dir )
+    COMPARE_CALC( sample_utf8, file(data_dir) )
 
     COMPARE_PLOT( sample_utf8,
                   COMPARE_CALC.out.jaccard_mat,
