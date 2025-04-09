@@ -7,6 +7,7 @@
 
 include { SAMPLE_CALC } from '../../modules/local/sample_calc'
 include { SAMPLE_PLOT } from '../../modules/local/sample_plot'
+include { TCRDIST3_MATRIX } from '../../modules/local/tcrdist3_matrix'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -44,6 +45,12 @@ workflow SAMPLE {
         .collectFile(name: 'j_family.csv', sort: true,
                      storeDir: "${params.output}/sample")
         .set { j_family_csv }
+
+
+    TCRDIST3_MATRIX(
+        sample_map,
+        file(params.db_path)
+    )
 
     /////// =================== PLOT SAMPLE ===================  ///////
 
