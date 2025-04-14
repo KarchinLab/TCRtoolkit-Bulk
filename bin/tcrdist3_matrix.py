@@ -31,8 +31,11 @@ def transform_trbv(trbv):
     return trbv
 
 def remove_locus(gene_name):
-    """If gene is in TCRBVXX-##*0# format, try removing the -##."""
-    return re.sub(r'-(\d+)\*', '*', gene_name)
+    """Remove the -## gene position from TRBV names unless the gene contains /OR."""
+    if '/OR' in gene_name:
+        return gene_name
+    else:
+        return re.sub(r'-(\d+)\*', '*', gene_name)
 
 def split_and_check_genes(gene_name):
     """Handle cases where two genes are combined (TCRBVXX-YY/XX-ZZ*0#) and return both separately."""
