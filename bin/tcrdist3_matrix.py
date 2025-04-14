@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from tcrdist.repertoire import TCRrep
 
-def reverse_transform_trbv(trbv):
+def transform_trbv(trbv):
     """Convert TCRBV notation back to TRBV format, remove zero padding before *, and handle /OR cases."""
     if not isinstance(trbv, str):
         return trbv  # Return as-is if not a string
@@ -57,12 +57,12 @@ def find_matching_gene(row, db):
         if "/" in gene and not re.search(r"/OR\d+-\d+", gene):  # Avoid /OR cases
             sub_genes = split_and_check_genes(gene)
             for sub_gene in sub_genes:
-                sub_gene = reverse_transform_trbv(sub_gene)  # Ensure correct *0# format
+                sub_gene = transform_trbv(sub_gene)  # Ensure correct *0# format
                 if sub_gene in db["id"].values:
                     return sub_gene
         
         # Direct match in db
-        transform_gene = reverse_transform_trbv(gene)
+        transform_gene = transform_trbv(gene)
         if transform_gene in db["id"].values:
             return transform_gene
         
@@ -71,7 +71,7 @@ def find_matching_gene(row, db):
         if modified_gene in db["id"].values:
             return modified_gene
         
-    transform_row = reverse_transform_trbv(row["vMaxResolved"])
+    transform_row = transform_trbv(row["vMaxResolved"])
     print(f'No match found for {transform_row}')
     
     return transform_row  # Return original vMaxResolved if no match is found
