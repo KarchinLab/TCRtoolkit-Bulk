@@ -16,10 +16,7 @@ process SAMPLE_CALC {
     script:
     """
     echo '' > sample_stats.csv
-    
-    calc_sample.py \
-        -s '${sample_meta}' \
-        -c ${count_table}
+    calc_sample.py -s '${sample_meta}' -c ${count_table}
     """
 
     stub:

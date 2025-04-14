@@ -8,6 +8,9 @@
 include { COMPARE_CALC  } from '../../modules/local/compare_calc'
 include { COMPARE_PLOT  } from '../../modules/local/compare_plot'
 
+include { GLIPH2_TURBOGLIPH } from '../../modules/local/gliph2_turbogliph'
+include { GLIPH2_PLOT } from '../../modules/local/gliph2_plot'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN SUBWORKFLOW
@@ -24,8 +27,7 @@ workflow COMPARE {
     data_dir
 
     main:
-    COMPARE_CALC( sample_utf8,
-                  data_dir )
+    COMPARE_CALC( sample_utf8, file(data_dir) )
 
     COMPARE_PLOT( sample_utf8,
                   COMPARE_CALC.out.jaccard_mat,
@@ -34,6 +36,11 @@ workflow COMPARE {
                   file(params.compare_stats_template),
                   project_name
                   )
+
+    GLIPH2_TURBOGLIPH(
+        sample_utf8,
+        file(params.data_dir)
+    )
     
     // emit:
     // compare_stats_html
