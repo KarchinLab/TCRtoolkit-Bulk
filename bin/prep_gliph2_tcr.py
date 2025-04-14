@@ -29,13 +29,11 @@ print("project_name: ", args.project_name)
 print("samplesheet: ", args.samplesheet)
 
 samplesheet = pd.read_csv(args.samplesheet, header=0)
-data_dir = args.data_dir + "/"
-tsv_files = glob.glob(os.path.join(data_dir, "*.tsv"))
-tsv_files = [os.path.abspath(file) for file in tsv_files]
 
 dfs = []
 for index, row in samplesheet.iterrows():
-    file_path = row['file']
+    file_path = os.path.basename(row['file'])
+    file_path = os.path.join(args.data_dir, file_path)
     print(f"Loading {file_path}")
     
     # Read the TSV file into a dataframe

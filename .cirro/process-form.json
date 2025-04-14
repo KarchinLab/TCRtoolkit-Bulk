@@ -15,13 +15,6 @@
                 "type": "boolean",
                 "value": true
             },
-            "cluster_lvl": {
-                "default": true,
-                "description": "Clone clustering analysis with GLIPH2",
-                "title": "Cluster",
-                "type": "boolean",
-                "value": true
-            },
             "kmer_min_depth": {
                 "default": "3",
                 "description": "minimum depth of k-mer during clustering (GLIPH2)",
