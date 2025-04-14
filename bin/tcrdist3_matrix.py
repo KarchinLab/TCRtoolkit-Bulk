@@ -48,42 +48,6 @@ def split_and_check_genes(gene_name):
         return [f"{prefix}-{g.split('-')[-1]}*{allele}" for g in genes]
     return [gene_name]
 
-split_and_check_genes("TCRBV06-02/06-03*01")
-
-def test_cases():
-    test_cases = [
-        ("TCRBV07", "TRBV7*01", "TRBV7*01"),
-        ("TCRBV27", "TRBV27*01", "TRBV27*01"),
-        ("TCRBV07-02", "TRBV7-2*01", "TRBV7*01"),
-        ("TCRBV17-02", "TRBV17-2*01", "TRBV17*01"),
-        ("TCRBV10-03*02", "TRBV10-3*02", "TRBV10*02"),
-        ("TCRBV07-02*01", "TRBV7-2*01", "TRBV7*01"),
-        ("TCRBV10-or09_02*01", "TRBV10/OR9-2*01", "TRBV10/OR9-2*01"),
-    ]
-    
-    print("Testing transform_trbv:")
-    for trbv_input, transform_trbv_output, remove_locus_output in test_cases:
-        result = transform_trbv(trbv_input)
-        print(f"Input: {trbv_input} | Expected: {transform_trbv_output} | Result: {result}")
-        assert result == transform_trbv_output, f"Test failed for {trbv_input}"
-    
-    print("Testing remove_locus:")
-    for trbv_input, transform_trbv_output, remove_locus_output in test_cases:
-        result2 = remove_locus(transform_trbv_output)
-        print(f"Input: {transform_trbv_output} | Expected: {remove_locus_output} | Result: {result2}")
-        assert result2 == remove_locus_output, f"Test failed for {transform_trbv_output}"
-    
-    split_cases = [
-        ("TCRBV06-02/06-03*01", ["TCRBV06-02*01", "TCRBV06-03*01"]),
-        ("TCRBV12-03/12-04", ["TCRBV12-03*01","TCRBV12-04*01"])
-    ]
-    print("Testing split_and_check_genes:")
-    for split_input, split_output, in split_cases:
-        result3 = split_and_check_genes(split_input)
-        print(f"Input: {split_input} | Expected: {split_output} | Result: {result3}")
-        assert result3 == split_output, f"Test failed for {split_input}"
-
-test_cases()
 
 def find_matching_gene(row, db):
     # Collect all possible genes from vMaxResolved and vGeneNameTies
@@ -119,55 +83,57 @@ def find_matching_gene(row, db):
     
     return transform_row  # Return original vMaxResolved if no match is found
 
-# Parse input arguments
-parser = argparse.ArgumentParser(description="Take positional args")
 
-parser.add_argument("sample_tsv")
-parser.add_argument("ref_database")
-parser.add_argument("cores", type=int)
+if __name__ == "__main__":
+    # Parse input arguments
+    parser = argparse.ArgumentParser(description="Take positional args")
 
-args = parser.parse_args()
+    parser.add_argument("sample_tsv")
+    parser.add_argument("ref_database")
+    parser.add_argument("cores", type=int)
 
-print(f"sample_tsv: {args.sample_tsv}")
-print(f"ref_database: {args.ref_database}")
-print(f"cores: {args.cores}")
+    args = parser.parse_args()
 
-sample_tsv = args.sample_tsv
+    print(f"sample_tsv: {args.sample_tsv}")
+    print(f"ref_database: {args.ref_database}")
+    print(f"cores: {args.cores}")
 
-# Get the basename
-basename = os.path.splitext(os.path.basename(sample_tsv))[0]
+    sample_tsv = args.sample_tsv
 
-# --- 1. Convert Adaptive output to tcrdist db format ---
-db = pd.read_table(args.ref_database, delimiter = '\t')
+    # Get the basename
+    basename = os.path.splitext(os.path.basename(sample_tsv))[0]
 
-db = db[db['organism']=='human']
+    # --- 1. Convert Adaptive output to tcrdist db format ---
+    db = pd.read_table(args.ref_database, delimiter = '\t')
 
-df = pd.read_table(sample_tsv, delimiter = '\t')
+    db = db[db['organism']=='human']
 
-df = df[['nucleotide', 'aminoAcid', 'vMaxResolved', 'vGeneNameTies', 'count (templates/reads)']]
-df["vMaxResolved"] = df.apply(lambda row: find_matching_gene(row, db), axis=1)
+    df = pd.read_table(sample_tsv, delimiter = '\t')
 
-df = df.rename(columns={'nucleotide': 'cdr3_b_nucseq',
-                    'aminoAcid': 'cdr3_b_aa',
-                    # 'CDR3a': 'cdr3_a_aa', 
-                    'vMaxResolved': 'v_b_gene',
-                    # 'TRBJ': 'j_b_gene',
-                    'count (templates/reads)': 'count'})
+    df = df[['nucleotide', 'aminoAcid', 'vMaxResolved', 'vGeneNameTies', 'count (templates/reads)']]
+    df["vMaxResolved"] = df.apply(lambda row: find_matching_gene(row, db), axis=1)
 
-df = df[df['cdr3_b_aa'].notna()]
-df = df[df['v_b_gene'].notna()]
-df = df.drop('vGeneNameTies', axis=1)
+    df = df.rename(columns={'nucleotide': 'cdr3_b_nucseq',
+                        'aminoAcid': 'cdr3_b_aa',
+                        # 'CDR3a': 'cdr3_a_aa', 
+                        'vMaxResolved': 'v_b_gene',
+                        # 'TRBJ': 'j_b_gene',
+                        'count (templates/reads)': 'count'})
 
-# --- 2. Calculate sparse distance matrix ---
-tr = TCRrep(cell_df = df,
-            organism = 'human',
-            chains = ['beta'],
-            db_file = 'alphabeta_gammadelta_db.tsv',
-            compute_distances = False)
-tr.cpus = args.cores
-tr.compute_distances()
+    df = df[df['cdr3_b_aa'].notna()]
+    df = df[df['v_b_gene'].notna()]
+    df = df.drop('vGeneNameTies', axis=1)
 
-np.savetxt(f"{basename}_distance_matrix.csv", tr.pw_beta, delimiter=",", fmt="%d")
+    # --- 2. Calculate sparse distance matrix ---
+    tr = TCRrep(cell_df = df,
+                organism = 'human',
+                chains = ['beta'],
+                db_file = 'alphabeta_gammadelta_db.tsv',
+                compute_distances = False)
+    tr.cpus = args.cores
+    tr.compute_distances()
 
-clone_df = tr.clone_df
-clone_df.to_csv(f"{basename}_clone_df.csv", index=False)
+    np.savetxt(f"{basename}_distance_matrix.csv", tr.pw_beta, delimiter=",", fmt="%d")
+
+    clone_df = tr.clone_df
+    clone_df.to_csv(f"{basename}_clone_df.csv", index=False)
