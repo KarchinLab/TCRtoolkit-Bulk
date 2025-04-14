@@ -9,19 +9,20 @@ import pandas as pd
 from tcrdist.repertoire import TCRrep
 
 def transform_trbv(trbv):
-    """Convert TCRBV notation back to TRBV format, remove zero padding before *, and handle /OR cases."""
+    """Convert gene names from Adaptive ImmunoSEQ to IMGT format."""
     if not isinstance(trbv, str):
         return trbv  # Return as-is if not a string
     
-    trbv = trbv.replace("TCRBV", "TRBV")  # Convert TCRBV → TRBV
+    # Convert locus name
+    trbv = trbv.replace("TCRBV", "TRBV")
     
-    # Remove zero padding from main number (TCRBV07 → TRBV7)
+    # Remove zero padding from gene name (TCRBV07 to TRBV7)
     trbv = re.sub(r'(?<=TRBV)0*(\d+)', r'\1', trbv)  
     
-    # Remove zero padding from subgroup (TCRBV7-02 → TRBV7-2)
+    # Remove zero padding from subgroup (TCRBV7-02 to TRBV7-2)
     trbv = re.sub(r'-(0\d+)', lambda m: f'-{int(m.group(1))}', trbv)  
     
-    # Convert "-orXX_XX" format back to "/OR#-#"
+    # Convert "-orXX_XX" to "/OR#-#" for orphon genes
     trbv = re.sub(r'-or0?(\d+)_0?(\d+)', r'/OR\1-\2', trbv)
     
     # Add *01 if allele group not specified
@@ -38,12 +39,51 @@ def remove_locus(gene_name):
         return re.sub(r'-(\d+)\*', '*', gene_name)
 
 def split_and_check_genes(gene_name):
-    """Handle cases where two genes are combined (TCRBVXX-YY/XX-ZZ*0#) and return both separately."""
-    if '/' in gene_name and not re.search(r'/OR\d+-\d+', gene_name):  # Ensure it's not an OR case
-        base, star_part = gene_name.split("*") if "*" in gene_name else (gene_name, "01")  
+    """Split combined TCRBV genes (e.g., TCRBV06-02/06-03*01 to TCRBV06-02*01 and TCRBV06-03*01."""
+    if '/' in gene_name and not re.search(r'/OR\d+-\d+', gene_name):  # Ensure it's not an orphon
+        base, allele = gene_name.split("*") if "*" in gene_name else (gene_name, "01")
+        prefix_match = re.match(r"(TCRBV\d+)", gene_name)
+        prefix = prefix_match.group(1) if prefix_match else "TCRBV"  # Fallback just in case
         genes = base.split("/")  # Split the genes
-        return [f"{g}*{star_part}" for g in genes]  # Reattach the *0# part to both genes
-    return [gene_name]  # Return as list for consistency
+        return [f"{prefix}-{g.split('-')[-1]}*{allele}" for g in genes]
+    return [gene_name]
+
+split_and_check_genes("TCRBV06-02/06-03*01")
+
+def test_cases():
+    test_cases = [
+        ("TCRBV07", "TRBV7*01", "TRBV7*01"),
+        ("TCRBV27", "TRBV27*01", "TRBV27*01"),
+        ("TCRBV07-02", "TRBV7-2*01", "TRBV7*01"),
+        ("TCRBV17-02", "TRBV17-2*01", "TRBV17*01"),
+        ("TCRBV10-03*02", "TRBV10-3*02", "TRBV10*02"),
+        ("TCRBV07-02*01", "TRBV7-2*01", "TRBV7*01"),
+        ("TCRBV10-or09_02*01", "TRBV10/OR9-2*01", "TRBV10/OR9-2*01"),
+    ]
+    
+    print("Testing transform_trbv:")
+    for trbv_input, transform_trbv_output, remove_locus_output in test_cases:
+        result = transform_trbv(trbv_input)
+        print(f"Input: {trbv_input} | Expected: {transform_trbv_output} | Result: {result}")
+        assert result == transform_trbv_output, f"Test failed for {trbv_input}"
+    
+    print("Testing remove_locus:")
+    for trbv_input, transform_trbv_output, remove_locus_output in test_cases:
+        result2 = remove_locus(transform_trbv_output)
+        print(f"Input: {transform_trbv_output} | Expected: {remove_locus_output} | Result: {result2}")
+        assert result2 == remove_locus_output, f"Test failed for {transform_trbv_output}"
+    
+    split_cases = [
+        ("TCRBV06-02/06-03*01", ["TCRBV06-02*01", "TCRBV06-03*01"]),
+        ("TCRBV12-03/12-04", ["TCRBV12-03*01","TCRBV12-04*01"])
+    ]
+    print("Testing split_and_check_genes:")
+    for split_input, split_output, in split_cases:
+        result3 = split_and_check_genes(split_input)
+        print(f"Input: {split_input} | Expected: {split_output} | Result: {result3}")
+        assert result3 == split_output, f"Test failed for {split_input}"
+
+test_cases()
 
 def find_matching_gene(row, db):
     # Collect all possible genes from vMaxResolved and vGeneNameTies
