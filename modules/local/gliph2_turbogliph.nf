@@ -21,7 +21,7 @@ process GLIPH2_TURBOGLIPH {
     script:
     """
     # Prep _tcr.txt file
-    prep_gliph2_tcr.py $data_folder ${params.project_name} $samplesheet_utf8
+    gliph2_preprocess.py $data_folder ${params.project_name} $samplesheet_utf8
 
     # R script starts here
     cat > run_gliph2.R <<EOF

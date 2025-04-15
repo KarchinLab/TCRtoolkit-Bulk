@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-prep_gliph2_tcr.py
+gliph2_preprocess.py
 Input: adaptive TSV files
 Output: ${project_name}_tcr.txt
 """
