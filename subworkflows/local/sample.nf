@@ -8,6 +8,7 @@
 include { SAMPLE_CALC } from '../../modules/local/sample_calc'
 include { SAMPLE_PLOT } from '../../modules/local/sample_plot'
 include { TCRDIST3_MATRIX } from '../../modules/local/tcrdist3_matrix'
+include { OLGA } from '../../modules/local/olga'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,6 +61,8 @@ workflow SAMPLE {
         sample_stats_csv,
         v_family_csv
         )
+    
+    OLGA ( sample_map )
     
     // emit:
     // sample_stats_csv
