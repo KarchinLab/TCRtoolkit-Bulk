@@ -7,11 +7,11 @@ process COMPARE_CONCATENATE {
     path data_folder
 
     output:
-    path "${params.project_name}_tcr.txt", emit: "concat_cdr3"
+    path "concatenated_cdr3.txt", emit: "concat_cdr3"
 
     script:
     """
     # Concatenate input Adaptive files and process metadata
-    gliph2_preprocess.py $data_folder ${params.project_name} $samplesheet_utf8
+    compare_concatenate.py $data_folder ${params.project_name} $samplesheet_utf8
     """
 }

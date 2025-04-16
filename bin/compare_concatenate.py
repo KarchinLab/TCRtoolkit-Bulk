@@ -3,7 +3,7 @@
 """
 gliph2_preprocess.py
 Input: adaptive TSV files
-Output: ${project_name}_tcr.txt
+Output: $concatenated_cdr3.txt
 """
 
 # Import modules
@@ -65,4 +65,4 @@ df_combined = df_combined.rename(columns={
 })
 df_combined = df_combined[df_combined['CDR3b'].notna()]
 
-df_combined.to_csv(f"{args.project_name}_tcr.txt", sep="\t", index=False, header=True)
+df_combined.to_csv(f"concatenated_cdr3.txt", sep="\t", index=False, header=True)
