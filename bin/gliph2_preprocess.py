@@ -43,12 +43,13 @@ for index, row in samplesheet.iterrows():
     subject_id = row['subject_id']
     timepoint = row['timepoint']
     origin = row['origin']
-    
+        
     # Add patient column
     df['patient'] = f"{subject_id}:{timepoint}_{origin}"
+    df['sample'] = row['sample']
     
     # Select relevant columns
-    df = df[['aminoAcid', 'vGeneName', 'jGeneName', 'patient', 'count (templates/reads)']]
+    df = df[['aminoAcid', 'vGeneName', 'jGeneName', 'patient', 'count (templates/reads)', 'sample']]
     dfs.append(df)
 
 
