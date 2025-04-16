@@ -17,7 +17,6 @@ parser = argparse.ArgumentParser(description="Take positional args")
 
 # Add positional arguments
 parser.add_argument("data_dir")
-parser.add_argument("project_name")
 parser.add_argument("samplesheet")
 
 # Parse the arguments
@@ -25,7 +24,6 @@ args = parser.parse_args()
 
 # Print the arguments
 print("data_dir: ", args.data_dir)
-print("project_name: ", args.project_name)
 print("samplesheet: ", args.samplesheet)
 
 samplesheet = pd.read_csv(args.samplesheet, header=0)

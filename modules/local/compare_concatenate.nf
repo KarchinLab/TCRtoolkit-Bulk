@@ -12,6 +12,6 @@ process COMPARE_CONCATENATE {
     script:
     """
     # Concatenate input Adaptive files and process metadata
-    compare_concatenate.py $data_folder ${params.project_name} $samplesheet_utf8
+    compare_concatenate.py $data_folder $samplesheet_utf8
     """
 }
