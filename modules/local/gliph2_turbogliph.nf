@@ -8,7 +8,6 @@ process GLIPH2_TURBOGLIPH {
     path concat_cdr3
 
     output:
-    path "${params.project_name}_tcr.txt"
     path "all_motifs.txt", emit: 'all_motifs'
     path "clone_network.txt", emit: 'clone_network'
     path "cluster_member_details.txt", emit: 'cluster_member_details'
