@@ -48,13 +48,6 @@ process GLIPH2_TURBOGLIPH {
     # Run the R script
     Rscript run_gliph2.R
 
-    # Convert the tab-separated .txt file to .csv file
-    # cat all_motifs.txt | sed 's/\t/,/g' > all_motifs.csv
-    # cat clone_network.txt | sed 's/\t/,/g' > clone_network.csv
-    # cat cluster_member_details.txt | sed 's/\t/,/g' > cluster_member_details.csv
-    # cat convergence_groups.txt | sed 's/\t/,/g' > convergence_groups.csv
-    # cat global_similarities.txt | sed 's/\t/,/g' > global_similarities.csv
-
     # Rename local_similarities file to standardize output name
     input_file="local_similarities_*.txt"
     cat \$input_file > local_similarities.txt
