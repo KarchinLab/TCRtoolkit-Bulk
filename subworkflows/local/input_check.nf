@@ -26,11 +26,11 @@ workflow INPUT_CHECK {
                     meta_map << value
                 }
             }
-            [meta_map, file(row.file)]}
+            [meta_map, file("${params.data_dir}/${row.file}")]}
         .set { sample_map }
-    
+
     emit:
-    sample_map
-    samplesheet_utf8
+    sample_map          //input to sample-level analysis
+    samplesheet_utf8    //input to comparison analysis
     // versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
 }
