@@ -1,6 +1,7 @@
 process TCRDIST3_PLOT {
     tag "${sample_meta[0]}"
-    label 'process_medium'
+    label 'process_high'
+    label 'process_high_memory'
     container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:
