@@ -8,6 +8,7 @@
 include { SAMPLE_CALC } from '../../modules/local/sample_calc'
 include { SAMPLE_PLOT } from '../../modules/local/sample_plot'
 include { TCRDIST3_MATRIX } from '../../modules/local/tcrdist3_matrix'
+include { TCRDIST3_PLOT } from '../../modules/local/tcrdist3_plot'
 include { OLGA } from '../../modules/local/olga'
 
 /*
@@ -51,6 +52,10 @@ workflow SAMPLE {
     TCRDIST3_MATRIX(
         sample_map,
         file(params.db_path)
+    )
+
+    TCRDIST3_PLOT(
+        TCRDIST3_MATRIX.out.tcr_output
     )
 
     /////// =================== PLOT SAMPLE ===================  ///////
