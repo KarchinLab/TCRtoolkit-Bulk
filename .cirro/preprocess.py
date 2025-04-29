@@ -20,9 +20,9 @@ samplesheet = ds.samplesheet
 
 ds.logger.info("Dropping incorrect file path & Merging ds.files w samplesheets")
 samplesheet = samplesheet.drop(columns=['file'])
-samplesheet2 = samplesheet.merge(ds.files, on='sample', how='left')
+# samplesheet2 = samplesheet.merge(ds.files, on='sample', how='left')
 
-samplesheet2.to_csv('samplesheet.csv', index=None)
+samplesheet.to_csv('samplesheet.csv', index=None)
 ds.add_param("samplesheet", "samplesheet.csv")
 
 
