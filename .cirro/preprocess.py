@@ -18,8 +18,8 @@ ds.logger.info("Checking samplesheet parameter")
 ds.logger.info(ds.samplesheet)
 samplesheet = ds.samplesheet
 
-ds.logger.info("Dropping incorrect file path & Merging ds.files w samplesheets")
-samplesheet = samplesheet.drop(columns=['file'])
+# ds.logger.info("Dropping incorrect file path & Merging ds.files w samplesheets")
+# samplesheet = samplesheet.drop(columns=['file'])
 # samplesheet2 = samplesheet.merge(ds.files, on='sample', how='left')
 
 samplesheet.to_csv('samplesheet.csv', index=None)
