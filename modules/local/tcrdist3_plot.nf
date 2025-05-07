@@ -9,11 +9,6 @@ process TCRDIST3_PLOT {
 
     output:
     path "${sample_meta[0]}_pairwise_distance_distribution.png", emit: 'beta_histogram'
-    // path "${count_table.baseName}_beta_chain_distance_matrix_heatmap.png", emit: 'beta_heatmap'
-    // path "${count_table.baseName}_beta_chain_clustered_distance_matrix_heatmap.png", emit: 'beta_clustered_heatmap'
-    // path "${count_table.baseName}_cdr3_beta_chain_pairwise_distance_distribution.png", emit: 'cdr3_beta_histogram'
-    // path "${count_table.baseName}_cdr3_beta_chain_distance_matrix_heatmap.png", emit: 'cdr3_beta_heatmap'
-    // path "${count_table.baseName}_cdr3_beta_chain_clustered_distance_matrix_heatmap.png", emit: 'cdr3_beta_clustered_heatmap'
 
     script:
     """
