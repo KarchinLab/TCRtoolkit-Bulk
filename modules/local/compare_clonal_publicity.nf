@@ -6,9 +6,10 @@ process COMPARE_CLONAL_PUBLICITY {
     path concat_cdr3
 
     output:
-    path "cdr3_sharing.tsv", emit: "shared_cdr3"
+    path "cdr3_sharing_pgen.tsv", emit: "shared_cdr3"
     path "sample_mapping.tsv", emit: "sample_mapping"
     path "sharing_histogram.png"
+    path "sharing_pgen_scatterplot.png"
 
     script:
     """
@@ -48,7 +49,6 @@ process COMPARE_CLONAL_PUBLICITY {
     sample_map_df.to_csv("sample_mapping.tsv", sep="\t", index=False)
 
 
-
     # Plot histogram
     sharing = final_df['total_samples'].values
 
@@ -67,7 +67,38 @@ process COMPARE_CLONAL_PUBLICITY {
     # Save to file
     plt.savefig("sharing_histogram.png", dpi=300, bbox_inches="tight")
     plt.close()
+    EOF
 
+    olga-compute_pgen --humanTRB -i cdr3_sharing.tsv -o pgen_sharing.tsv
+
+    python - <<EOF
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
+
+    # Load TSVs for shared cdr3s and corresponding pgen values
+    left_df = pd.read_csv('pgen_sharing.tsv', sep='\t', header=None, usecols=[0, 1], names=['CDR3b', 'pgen'])
+    right_df = pd.read_csv('cdr3_sharing.tsv', sep='\t')
+
+    # Drop rows where pgen == 0 and merge
+    left_df = left_df[left_df['pgen'] != 0]
+    merged_df = pd.merge(left_df, right_df, on='CDR3b', how='left')
+    merged_df.to_csv('cdr3_sharing_pgen.tsv', sep='\t', index=False)
+
+    # Create scatter plot with log-transform pgen
+    merged_df["log10_pgen"] = np.log10(merged_df["pgen"])
+    plt.figure(figsize=(8, 6))
+    plt.grid(True)
+    plt.scatter(merged_df["log10_pgen"], merged_df["total_samples"], c='blue', alpha=0.7)
+    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    plt.xlabel("log10(Probability)")
+    plt.ylabel("Number of Shared Samples")
+    plt.title("Scatterplot of Shared TCRs vs log10(Generation Probability)")
+    plt.tight_layout()
+    plt.savefig("sharing_pgen_scatterplot.png", dpi=300, bbox_inches="tight")
+    plt.close()
     EOF
     """
 }
