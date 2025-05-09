@@ -17,11 +17,6 @@ ds.logger.info(ds.files.columns)
 ds.logger.info("Checking samplesheet parameter")
 ds.logger.info(ds.samplesheet)
 samplesheet = ds.samplesheet
-
-# ds.logger.info("Dropping incorrect file path & Merging ds.files w samplesheets")
-# samplesheet = samplesheet.drop(columns=['file'])
-# samplesheet2 = samplesheet.merge(ds.files, on='sample', how='left')
-
 samplesheet.to_csv('samplesheet.csv', index=None)
 ds.add_param("samplesheet", "samplesheet.csv")
 
@@ -38,5 +33,3 @@ else:
 ds.add_param('workflow_level', ','.join(workflow_level))
 
 ds.logger.info(ds.params)
-
-## 
