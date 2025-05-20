@@ -7,8 +7,8 @@ process OLGA {
     tuple val(sample_meta), path(count_table)
 
     output:
-    path "${count_table.baseName}_tcr_pgen.tsv", emit: "olga_output"
-    path "${count_table.baseName}_tcr_pgen_histogram.png"
+    path "${sample_meta[0]}_tcr_pgen.tsv", emit: "olga_output"
+    path "${sample_meta[0]}_tcr_pgen_histogram.png"
 
     script:
     """
@@ -24,7 +24,7 @@ process OLGA {
 
     python dropAA.py
 
-    olga-compute_pgen --humanTRB -i output.tsv -o "${count_table.baseName}_tcr_pgen.tsv"
+    olga-compute_pgen --humanTRB -i output.tsv -o "${sample_meta[0]}_tcr_pgen.tsv"
 
     python - <<EOF
     import pandas as pd
@@ -32,8 +32,8 @@ process OLGA {
     import matplotlib.pyplot as plt
 
     # Load TSV with no header
-    df = pd.read_csv('${count_table.baseName}_tcr_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['CDR3b', 'probability'])
-    
+    df = pd.read_csv('${sample_meta[0]}_tcr_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['CDR3b', 'probability'])
+
     # Drop rows where pgen is 0
     df = df[df['probability'] != 0]
     log_probs = np.log10(df['probability'])
@@ -45,11 +45,11 @@ process OLGA {
     # Label with LaTeX formatting
     plt.xlabel('log_10 Generation Probability')
     plt.ylabel('Probability Density')
-    plt.title(f'${count_table.baseName} TCR Generation Probability Histogram')
+    plt.title(f'${sample_meta[0]} TCR Generation Probability Histogram')
     # plt.grid(True)
 
     # Save to file
-    plt.savefig("${count_table.baseName}_tcr_pgen_histogram.png", dpi=300, bbox_inches="tight")
+    plt.savefig("${sample_meta[0]}_tcr_pgen_histogram.png", dpi=300, bbox_inches="tight")
     plt.close()
     EOF
     """
