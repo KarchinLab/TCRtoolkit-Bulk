@@ -52,6 +52,8 @@ workflow SAMPLE {
 
     TCRDIST3_MATRIX(
         sample_map,
+        params.matrix_sparsity,
+        params.distance_metric,
         file(params.db_path)
     )
 
