@@ -26,7 +26,7 @@ if (params.output) { output = params.output } else { exit 1, 'Output directory n
 include { INPUT_CHECK } from '../subworkflows/local/input_check'
 include { SAMPLE      } from '../subworkflows/local/sample'
 include { COMPARE     } from '../subworkflows/local/compare'
-include { CLUSTER     } from '../subworkflows/local/cluster'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,12 +56,6 @@ workflow TCRTOOLKIT_BULK {
                  params.project_name,
                  file(params.data_dir) )
     }
-
-    // Running clustering analysis
-    if (levels.contains('cluster') || levels.contains('complete')) {
-        CLUSTER ( INPUT_CHECK.out.samplesheet_utf8 )
-    }
-    
 }
 
 /*

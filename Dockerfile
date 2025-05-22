@@ -1,35 +1,36 @@
-FROM condaforge/miniforge3:23.3.1-1
+FROM condaforge/miniforge3:24.9.2-0
 
-# copy the environment file into /tmp
+# Copy the environment file into /tmp
 COPY env.yml /tmp/env.yml
 
-# update the mamba base environment with required packages
-WORKDIR /tmp
-RUN mamba env update -n base --file env.yml
-
-# install curl
+# Install system dependencies
 RUN apt-get update \
-    && apt-get install -y curl \
+    && apt-get install -y \
+    build-essential \
+    curl \
+    gcc \
+    g++ \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# install GLIPH2
-RUN mkdir -p /opt/gliph2 \
-    && curl http://50.255.35.37:8080/downloads/irtools.centos -o /opt/gliph2/irtools \
-    && chmod +x /opt/gliph2/irtools
+# Update the conda base environment with required packages
+WORKDIR /tmp
+RUN conda env update -n base --file env.yml
 
-# install quarto 
-RUN mkdir -p /opt/quarto/1.3.433 \
+# Install quarto
+RUN mkdir -p /opt/quarto/1.6.42 \
     && curl -o quarto.tar.gz -L \
-        "https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.433/quarto-1.3.433-linux-amd64.tar.gz" \
+        "https://github.com/quarto-dev/quarto-cli/releases/download/v1.6.42/quarto-1.6.42-linux-amd64.tar.gz" \
     && tar -zxvf quarto.tar.gz \
-        -C "/opt/quarto/1.3.433" \
+        -C "/opt/quarto/1.6.42" \
         --strip-components=1 \
     && rm quarto.tar.gz 
 
-# install R
-RUN mamba install -y r-base=4.1.0 \
-    && mamba clean -afy
+# Install R package not available via conda
+RUN Rscript -e "remotes::install_github('HetzDra/turboGliph')"
 
-# add quarto to the path
-ENV PATH="/opt/quarto/1.3.433/bin:${PATH}"
+# Add quarto to the PATH
+ENV PATH="/opt/quarto/1.6.42/bin:${PATH}"
+
+# Add LD_LIBRARY_PATH for pandas
+ENV LD_LIBRARY_PATH=/opt/conda/lib

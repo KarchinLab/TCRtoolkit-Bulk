@@ -1,10 +1,6 @@
-process PLOT_COMPARE {
-    // tag "${jaccard_mat}"
-    label 'plot_compare'
-
-    container "domebraccia/bulktcr:1.0"
-
-    publishDir "${params.output}/reports/", mode: "copy", overwrite: "true"
+process COMPARE_PLOT {
+    label 'process_single'
+    container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:
     path sample_utf8
@@ -39,5 +35,4 @@ process PLOT_COMPARE {
     """
     touch compare_stats.qmd
     """
-    
-    }
+}

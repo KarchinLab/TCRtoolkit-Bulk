@@ -1,14 +1,11 @@
-process PLOT_GLIPH2 {
-    
-    // tag "${}"
-    label 'plot_gliph2'
-    container "domebraccia/bulktcr:1.0"
-    publishDir "${params.output}/reports/", mode: "copy", overwrite: "true"
+process GLIPH2_PLOT {
+    label 'process_single'
+    container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:
     path gliph2_report_template
-    path clusters
-    path cluster_stats
+    path cluster_member_details
+    path convergence_groups
 
     output:
     path 'gliph2_report.html'
@@ -23,9 +20,8 @@ process PLOT_GLIPH2 {
         -P project_name:$params.project_name \
         -P workflow_cmd:'$workflow.commandLine' \
         -P project_dir:$projectDir \
-        -P clusters:$clusters \
-        -P cluster_stats:$cluster_stats \
+        -P clusters:$cluster_member_details \
+        -P cluster_stats:$convergence_groups \
         --to html
     """
-    
-    }
+}

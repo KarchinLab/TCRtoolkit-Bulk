@@ -1,10 +1,7 @@
-process CALC_SAMPLE {
+process SAMPLE_CALC {
     tag "${sample_meta[0]}"
     label 'process_single'
-
-    container "domebraccia/bulktcr:1.0"
-
-    publishDir "${params.output}/sample_output/", mode: "copy", overwrite: "true"
+    container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:
     tuple val(sample_meta), path(count_table)
@@ -19,10 +16,7 @@ process CALC_SAMPLE {
     script:
     """
     echo '' > sample_stats.csv
-    
-    calc_sample.py \
-        -s '${sample_meta}' \
-        -c ${count_table}
+    sample_calc.py -s '${sample_meta}' -c ${count_table}
     """
 
     stub:

@@ -1,24 +1,18 @@
 process SAMPLESHEET_CHECK {
     tag "${samplesheet}"
-
-    container "domebraccia/bulktcr:1.0"
-
-    publishDir "${params.output}/pipeline_info/", mode: "copy", overwrite: "true"
+    label 'process_single'
+    container "ghcr.io/break-through-cancer/bulktcr:latest"
 
     input:
     path samplesheet
 
     output:
     path 'samplesheet_utf8.csv'    , emit: samplesheet_utf8
-    path 'samplesheet_stats.txt'
+    path 'samplesheet_stats.csv'
 
     script: 
     """
-    #!/bin/bash
-    
-    iconv -t utf-8 $samplesheet > samplesheet_utf8.csv
-
-    csvstat samplesheet_utf8.csv > samplesheet_stats.txt
+    samplesheet.py -s $samplesheet -d ${params.data_dir}
     """
 
     stub:

@@ -5,8 +5,14 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { CALC_COMPARE  } from '../../modules/local/calc_compare.nf'
-include { PLOT_COMPARE  } from '../../modules/local/plot_compare.nf'
+include { COMPARE_CALC  } from '../../modules/local/compare_calc'
+include { COMPARE_PLOT  } from '../../modules/local/compare_plot'
+include { COMPARE_CONCATENATE  } from '../../modules/local/compare_concatenate'
+
+include { COMPARE_CLONAL_PUBLICITY } from '../../modules/local/compare_clonal_publicity'
+
+include { GLIPH2_TURBOGLIPH } from '../../modules/local/gliph2_turbogliph'
+include { GLIPH2_PLOT } from '../../modules/local/gliph2_plot'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -15,25 +21,37 @@ include { PLOT_COMPARE  } from '../../modules/local/plot_compare.nf'
 */
 
 workflow COMPARE {
-
+    
     // println("Welcome to the BULK TCRSEQ pipeline! -- COMPARE ")
-
+    
     take:
     sample_utf8
     project_name
     data_dir
-
+    
     main:
-    CALC_COMPARE( sample_utf8,
-                  data_dir )
-
-    PLOT_COMPARE( sample_utf8,
-                  CALC_COMPARE.out.jaccard_mat,
-                  CALC_COMPARE.out.sorensen_mat,
-                  CALC_COMPARE.out.morisita_mat,
+    COMPARE_CALC( sample_utf8, file(data_dir) )
+    
+    COMPARE_PLOT( sample_utf8,
+                  COMPARE_CALC.out.jaccard_mat,
+                  COMPARE_CALC.out.sorensen_mat,
+                  COMPARE_CALC.out.morisita_mat,
                   file(params.compare_stats_template),
                   project_name
                   )
+    
+    COMPARE_CONCATENATE(
+        sample_utf8,
+        file(params.data_dir)
+    )
+    
+    GLIPH2_TURBOGLIPH(
+        COMPARE_CONCATENATE.out.concat_cdr3
+    )
+    
+    COMPARE_CLONAL_PUBLICITY(
+        COMPARE_CONCATENATE.out.concat_cdr3
+    )
     
     // emit:
     // compare_stats_html

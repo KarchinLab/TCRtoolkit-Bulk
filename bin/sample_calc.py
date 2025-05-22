@@ -14,36 +14,6 @@ from scipy.stats import entropy
 import numpy as np
 import csv
 
-# initialize parser
-parser = argparse.ArgumentParser(description='Calculate clonality of a TCR repertoire')
-
-# add arguments
-parser.add_argument('-s', '--sample_meta', 
-                    metavar='sample_meta', 
-                    type=str, 
-                    help='sample metadata passed in through samples CSV file')
-parser.add_argument('-c', '--count_table', 
-                    metavar='count_table', 
-                    type=argparse.FileType('r'), 
-                    help='counts file in TSV format')
-# parser.add_argument('-d', '--data_dir',
-#                     metavar='data_dir',
-#                     type=str,
-#                     help='path to data directory')
-
-args = parser.parse_args() 
-
-## convert metadata to list
-s = args.sample_meta
-sample_meta = args.sample_meta[1:-1].split(', ')
-# print('sample_meta looks like this: ' + str(sample_meta))
-
-# Read in the counts file
-counts = pd.read_csv(args.count_table, sep='\t', header=0)
-counts = counts.rename(columns={'count (templates/reads)': 'read_count', 'frequencyCount (%)': 'frequency'})
-# print('counts columns: \n')
-# print(counts.columns)
-
 def calc_sample_stats(sample_meta, counts):
     """Calculate sample level statistics of TCR repertoire."""
 
@@ -145,4 +115,31 @@ def calc_sample_stats(sample_meta, counts):
     # with open('gene_usage_' + str(metadata[1] + '_' + str(metadata[2] + '_' + str(metadata[3]))) + '.pkl', 'wb') as f:
     #     pickle.dump(gene_usage, f)
 
-calc_sample_stats(sample_meta, counts)
+def main():
+    # initialize parser
+    parser = argparse.ArgumentParser(description='Calculate clonality of a TCR repertoire')
+
+    # add arguments
+    parser.add_argument('-s', '--sample_meta', 
+                        metavar='sample_meta', 
+                        type=str, 
+                        help='sample metadata passed in through samples CSV file')
+    parser.add_argument('-c', '--count_table', 
+                        metavar='count_table', 
+                        type=argparse.FileType('r'), 
+                        help='counts file in TSV format')
+
+    args = parser.parse_args() 
+
+    ## convert metadata to list
+    s = args.sample_meta
+    sample_meta = args.sample_meta[1:-1].split(', ')
+
+    # Read in the counts file
+    counts = pd.read_csv(args.count_table, sep='\t', header=0)
+    counts = counts.rename(columns={'count (templates/reads)': 'read_count', 'frequencyCount (%)': 'frequency'})
+
+    calc_sample_stats(sample_meta, counts)
+
+if __name__ == "__main__":
+    main()
