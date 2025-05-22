@@ -26,13 +26,13 @@
                 ]
             },
             "distance_metric": {
-                "default": "sparse",
+                "default": "tcrdist",
                 "description": "Use default TCRdist3 or Levenshtein distance metric.",
                 "title": "",
                 "type": "string",
                 "enum": [
-                    "sparse",
-                    "full"
+                    "tcrdist",
+                    "levenshtein"
                 ]
             },
             "kmer_min_depth": {
