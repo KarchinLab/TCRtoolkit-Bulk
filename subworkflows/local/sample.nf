@@ -8,6 +8,9 @@
 include { SAMPLE_CALC } from '../../modules/local/sample_calc'
 include { SAMPLE_PLOT } from '../../modules/local/sample_plot'
 include { TCRDIST3_MATRIX } from '../../modules/local/tcrdist3_matrix'
+include { TCRDIST3_PLOT } from '../../modules/local/tcrdist3_plot'
+include { OLGA } from '../../modules/local/olga'
+include { CONVERGENCE } from '../../modules/local/convergence'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -52,6 +55,10 @@ workflow SAMPLE {
         file(params.db_path)
     )
 
+    TCRDIST3_PLOT(
+        TCRDIST3_MATRIX.out.tcr_output
+    )
+
     /////// =================== PLOT SAMPLE ===================  ///////
 
     SAMPLE_PLOT (
@@ -60,6 +67,10 @@ workflow SAMPLE {
         sample_stats_csv,
         v_family_csv
         )
+    
+    OLGA ( sample_map )
+    
+    CONVERGENCE ( sample_map )
     
     // emit:
     // sample_stats_csv

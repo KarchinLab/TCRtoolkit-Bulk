@@ -13,7 +13,7 @@ process COMPARE_CALC {
 
     script:
     """
-    calc_compare.py \
+    compare_calc.py \
         -s $sample_utf8 \
         -d $data_dir
     """

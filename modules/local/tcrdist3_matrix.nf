@@ -9,7 +9,7 @@ process TCRDIST3_MATRIX {
     path ref_db
 
     output:
-    path "${count_table.baseName}_distance_matrix.csv", emit: 'distance_matrix'
+    tuple val(sample_meta), path("${count_table.baseName}_distance_matrix.csv"), emit: 'tcr_output'
     path "${count_table.baseName}_clone_df.csv", emit: 'clone_df'
     
     script:

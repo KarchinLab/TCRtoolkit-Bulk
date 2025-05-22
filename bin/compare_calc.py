@@ -13,7 +13,7 @@ import sys
 import csv
 from scipy.stats import entropy
 
-print('-- ENTERED calc_compare.py--')
+print('-- ENTERED compare_calc.py--')
 print('-- THE TIME IS: --' + str(pd.Timestamp.now()))
 
 # initialize parser
