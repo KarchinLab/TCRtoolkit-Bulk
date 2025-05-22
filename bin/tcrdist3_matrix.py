@@ -254,8 +254,13 @@ if __name__ == "__main__":
     # Full matrix
     if args.matrix_sparsity == "full":
         tr.compute_distances()
+        max_val = tr.pw_beta.max()
         np.savetxt(f"{basename}_distance_matrix.csv", tr.pw_beta, delimiter=",", fmt="%d")
     # Sparse matrix
     else:
         tr.compute_sparse_rect_distances(radius = radius, chunk_size = 100)
+        max_val = tr.rw_beta.max()
         sp.save_npz(f"{basename}_distance_matrix.npz", tr.rw_beta)
+    
+    with open(f"matrix_maximum_value.txt", "w") as f:
+        f.write(str(max_val))

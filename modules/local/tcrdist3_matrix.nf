@@ -9,8 +9,9 @@ process TCRDIST3_MATRIX {
     path ref_db
 
     output:
-    tuple val(sample_meta), path("${sample_meta[0]}_distance_matrix.*"), emit: 'tcr_output'
+    tuple val(sample_meta), path("${sample_meta[0]}_distance_matrix.*"), emit: 'tcrdist_output'
     path "${sample_meta[0]}_clone_df.csv", emit: 'clone_df'
+    path "matrix_maximum_value.txt", emit: 'max_matrix_value'
     
     script:
     """
