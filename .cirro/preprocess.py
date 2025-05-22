@@ -17,26 +17,19 @@ ds.logger.info(ds.files.columns)
 ds.logger.info("Checking samplesheet parameter")
 ds.logger.info(ds.samplesheet)
 samplesheet = ds.samplesheet
-
-ds.logger.info("Dropping incorrect file path & Merging ds.files w samplesheets")
-samplesheet = samplesheet.drop(columns=['file'])
-samplesheet2 = samplesheet.merge(ds.files, on='sample', how='left')
-
-samplesheet2.to_csv('samplesheet.csv', index=None)
+samplesheet.to_csv('samplesheet.csv', index=None)
 ds.add_param("samplesheet", "samplesheet.csv")
 
 
 # 3. Set workflow_level value based on form input
 ds.logger.info("Setting workflow_level")
-if ds.params['sample_lvl'] == ds.params['compare_lvl'] == ds.params['cluster_lvl'] == True:
+if ds.params['sample_lvl'] == ds.params['compare_lvl'] == True:
     workflow_level = ['complete']
 else:
-    workflow_lvls = ['sample', 'compare', 'cluster']
-    chosen_lvls = [ds.params['sample_lvl'], ds.params['compare_lvl'], ds.params['cluster_lvl']]
+    workflow_lvls = ['sample', 'compare']
+    chosen_lvls = [ds.params['sample_lvl'], ds.params['compare_lvl']]
     workflow_level = [i for i, j in zip(workflow_lvls, chosen_lvls) if j]
 
 ds.add_param('workflow_level', ','.join(workflow_level))
 
 ds.logger.info(ds.params)
-
-## 
