@@ -24,7 +24,7 @@ process OLGA {
 
     python dropAA.py
 
-    olga-compute_pgen --humanTRB -i output.tsv -o "${sample_meta[0]}_tcr_pgen.tsv"
+    olga-compute_pgen --humanTRB -i output.tsv -o "${sample_meta[0]}_pgen.tsv"
 
     python - <<EOF
     import pandas as pd
@@ -32,15 +32,23 @@ process OLGA {
     import matplotlib.pyplot as plt
 
     # Load TSV with no header
-    df = pd.read_csv('${sample_meta[0]}_tcr_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['CDR3b', 'probability'])
+    import pandas as pd
+
+    df1 = pd.read_csv("${count_table}", sep="\t")
+    df1 = df1.dropna(subset=["aminoAcid"])
+    df2 = pd.read_csv('${sample_meta[0]}_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['aminoAcid', 'pgen'])
+
+    merged_df = pd.merge(df1, df2, on='aminoAcid', how='left')
+    merged_df.to_csv("${sample_meta[0]}_tcr_pgen.tsv", sep="\t", index=False)
 
     # Drop rows where pgen is 0
-    df = df[df['probability'] != 0]
-    log_probs = np.log10(df['probability'])
+    merged_df = merged_df[merged_df['pgen'] != 0]
+    log_probs = np.log10(merged_df['pgen'])
+    cdr3_counts = merged_df['count (templates/reads)']
 
     # Plot histogram
     plt.figure(figsize=(8, 5))
-    plt.hist(log_probs, bins=30, density=True, edgecolor='black')
+    plt.hist(log_probs, bins=30, density=True, weights=cdr3_counts, edgecolor='black')
 
     # Label with LaTeX formatting
     plt.xlabel('log_10 Generation Probability')
