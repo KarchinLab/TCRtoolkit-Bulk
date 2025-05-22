@@ -28,5 +28,5 @@ jobs:
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
 
-      - name: stub run
+      - name: run pipeline
         run: nextflow run main.nf --data_dir test_data/minimal-example --samplesheet test_data/minimal-example/samplesheet.csv --output out-minimal-example --max_memory 10GB --max_cpus 4
