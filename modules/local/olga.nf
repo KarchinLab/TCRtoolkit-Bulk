@@ -31,13 +31,10 @@ process OLGA {
     import numpy as np
     import matplotlib.pyplot as plt
 
-    # Load TSV with no header
-    import pandas as pd
-
+    # Load count and probability generation tables and merge
     df1 = pd.read_csv("${count_table}", sep="\t")
     df1 = df1.dropna(subset=["aminoAcid"])
     df2 = pd.read_csv('${sample_meta[0]}_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['aminoAcid', 'pgen'])
-
     merged_df = pd.merge(df1, df2, on='aminoAcid', how='left')
     merged_df.to_csv("${sample_meta[0]}_tcr_pgen.tsv", sep="\t", index=False)
 
