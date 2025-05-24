@@ -1,14 +1,14 @@
 process OLGA {
     tag "${sample_meta[0]}"
     label 'process_low'
-    container "ghcr.io/break-through-cancer/bulktcr:latest"
+    container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
     input:
     tuple val(sample_meta), path(count_table)
 
     output:
-    path "${count_table.baseName}_tcr_pgen.tsv", emit: "olga_output"
-    path "${count_table.baseName}_tcr_pgen_histogram.png"
+    path "${sample_meta[0]}_tcr_pgen.tsv", emit: "olga_output"
+    path "${sample_meta[0]}_tcr_pgen_histogram.png"
 
     script:
     """
@@ -24,32 +24,37 @@ process OLGA {
 
     python dropAA.py
 
-    olga-compute_pgen --humanTRB -i output.tsv -o "${count_table.baseName}_tcr_pgen.tsv"
+    olga-compute_pgen --humanTRB -i output.tsv -o "${sample_meta[0]}_pgen.tsv"
 
     python - <<EOF
     import pandas as pd
     import numpy as np
     import matplotlib.pyplot as plt
 
-    # Load TSV with no header
-    df = pd.read_csv('${count_table.baseName}_tcr_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['CDR3b', 'probability'])
-    
+    # Load count and probability generation tables and merge
+    df1 = pd.read_csv("${count_table}", sep="\t")
+    df1 = df1.dropna(subset=["aminoAcid"])
+    df2 = pd.read_csv('${sample_meta[0]}_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['aminoAcid', 'pgen'])
+    merged_df = pd.merge(df1, df2, on='aminoAcid', how='left')
+    merged_df.to_csv("${sample_meta[0]}_tcr_pgen.tsv", sep="\t", index=False)
+
     # Drop rows where pgen is 0
-    df = df[df['probability'] != 0]
-    log_probs = np.log10(df['probability'])
+    merged_df = merged_df[merged_df['pgen'] != 0]
+    log_probs = np.log10(merged_df['pgen'])
+    cdr3_counts = merged_df['count (templates/reads)']
 
     # Plot histogram
     plt.figure(figsize=(8, 5))
-    plt.hist(log_probs, bins=30, density=True, edgecolor='black')
+    plt.hist(log_probs, bins=30, density=True, weights=cdr3_counts, edgecolor='black')
 
     # Label with LaTeX formatting
     plt.xlabel('log_10 Generation Probability')
     plt.ylabel('Probability Density')
-    plt.title(f'${count_table.baseName} TCR Generation Probability Histogram')
+    plt.title(f'${sample_meta[0]} TCR Generation Probability Histogram')
     # plt.grid(True)
 
     # Save to file
-    plt.savefig("${count_table.baseName}_tcr_pgen_histogram.png", dpi=300, bbox_inches="tight")
+    plt.savefig("${sample_meta[0]}_tcr_pgen_histogram.png", dpi=300, bbox_inches="tight")
     plt.close()
     EOF
     """

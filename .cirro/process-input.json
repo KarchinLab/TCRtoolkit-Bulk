@@ -2,9 +2,11 @@
     "sample_lvl": "$.params.dataset.paramJson.sample_lvl",
     "compare_lvl": "$.params.dataset.paramJson.compare_lvl",
     "data_dir": "$.params.inputs[0].s3|/data/",
+    "matrix_sparsity": "$.params.dataset.paramJson.matrix_sparsity",
+    "distance_metric": "$.params.dataset.paramJson.distance_metric",
     "kmer_min_depth": "$.params.dataset.paramJson.kmer_min_depth",
     "local_min_OVE": "$.params.dataset.paramJson.local_min_OVE",
     "local_min_pvalue": "$.params.dataset.paramJson.local_min_pvalue",
-    "output": "$.params.dataset.s3|/data/",
+    "outdir": "$.params.dataset.s3|/data/",
     "p_depth": "$.params.dataset.paramJson.p_depth"
 }

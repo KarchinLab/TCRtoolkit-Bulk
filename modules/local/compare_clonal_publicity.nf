@@ -1,6 +1,6 @@
 process COMPARE_CLONAL_PUBLICITY {
     label 'process_low'
-    container "ghcr.io/break-through-cancer/bulktcr:latest"
+    container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
     input:
     path concat_cdr3

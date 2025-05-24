@@ -1,7 +1,7 @@
 process SAMPLESHEET_CHECK {
     tag "${samplesheet}"
     label 'process_single'
-    container "ghcr.io/break-through-cancer/bulktcr:latest"
+    container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
     input:
     path samplesheet

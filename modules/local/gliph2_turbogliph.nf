@@ -2,7 +2,7 @@ process GLIPH2_TURBOGLIPH {
     label 'process_high'
     label 'process_high_compute'
     label 'process_high_memory'
-    container "ghcr.io/break-through-cancer/bulktcr:latest"
+    container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
     input:
     path concat_cdr3
