@@ -1,6 +1,6 @@
 process COMPARE_CONCATENATE {
     label 'process_low'
-    container "ghcr.io/break-through-cancer/bulktcr:latest"
+    container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
     input:
     path samplesheet_utf8
