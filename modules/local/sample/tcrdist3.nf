@@ -51,10 +51,11 @@ process TCRDIST3_HISTOGRAM_CALC {
         full_matrix = np.loadtxt(input_path, delimiter=',')
         lower_triangle = full_matrix[np.tril_indices(full_matrix.shape[0], k=-1)]
     elif ext == ".npz":
-        sparse_matrix = sp.load_npz(input_path)
+        sparse_matrix = sp.load_npz(input_path).tocoo()
 
         # Extract the lower triangle values (excluding diagonal)
-        lower_triangle = sparse_matrix[np.tril_indices(sparse_matrix.shape[0], k=-1)]
+        mask = sparse_matrix.row > sparse_matrix.col
+        lower_triangle = sparse_matrix.data[mask]
 
         # Remove values equal to 0 (i.e., not within cutoff radius)
         lower_triangle = lower_triangle[lower_triangle != 0]
