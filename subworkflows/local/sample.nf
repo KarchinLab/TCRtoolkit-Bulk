@@ -5,11 +5,11 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { SAMPLE_CALC } from '../../modules/local/sample_calc'
-include { SAMPLE_PLOT } from '../../modules/local/sample_plot'
-include { TCRDIST3_MATRIX; TCRDIST3_HISTOGRAM_CALC; TCRDIST3_HISTOGRAM_PLOT} from '../../modules/local/tcrdist3'
-include { OLGA } from '../../modules/local/olga'
-include { CONVERGENCE } from '../../modules/local/convergence'
+include { SAMPLE_CALC } from '../../modules/local/sample/sample_calc'
+include { SAMPLE_PLOT } from '../../modules/local/sample/sample_plot'
+include { TCRDIST3_MATRIX; TCRDIST3_HISTOGRAM_CALC; TCRDIST3_HISTOGRAM_PLOT} from '../../modules/local/sample/tcrdist3'
+include { OLGA } from '../../modules/local/sample/olga'
+include { CONVERGENCE } from '../../modules/local/sample/convergence'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -5,11 +5,11 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { COMPARE_CALC  } from '../../modules/local/compare_calc'
-include { COMPARE_PLOT  } from '../../modules/local/compare_plot'
-include { COMPARE_CONCATENATE  } from '../../modules/local/compare_concatenate'
-include { TCRSHARING_CALC } from '../../modules/local/tcrsharing'
-include { GLIPH2_TURBOGLIPH; GLIPH2_PLOT } from '../../modules/local/gliph2'
+include { COMPARE_CALC  } from '../../modules/local/compare/compare_calc'
+include { COMPARE_PLOT  } from '../../modules/local/compare/compare_plot'
+include { COMPARE_CONCATENATE  } from '../../modules/local/compare/compare_concatenate'
+include { TCRSHARING_CALC } from '../../modules/local/compare/tcrsharing'
+include { GLIPH2_TURBOGLIPH; GLIPH2_PLOT } from '../../modules/local/compare/gliph2'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
