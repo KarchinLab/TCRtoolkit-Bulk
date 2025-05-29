@@ -1,7 +1,6 @@
 process TCRDIST3_MATRIX {
     tag "${sample_meta[0]}"
-    // container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
-    container "tcrbulk:leven"
+    container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
     input:
     tuple val(sample_meta), path(count_table)
