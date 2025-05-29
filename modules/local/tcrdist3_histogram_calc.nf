@@ -1,6 +1,6 @@
 process TCRDIST3_HISTOGRAM_CALC {
     tag "${sample_meta[0]}"
-    label 'process_medium'
+    label 'process_high'
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
     input:
