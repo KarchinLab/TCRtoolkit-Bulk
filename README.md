@@ -43,6 +43,6 @@ Below is a minimal example of how to run the pipeline. The `minimal-example` dat
 ## from the TCRtoolkit-Bulk directory
 nextflow run main.nf --data_dir test_data/minimal-example \
     --samplesheet test_data/minimal-example/samplesheet.csv \
-    --outdir out-minimal-dev \
+    --output out-minimal-dev \
     --max_memory 10GB --max_cpus 4
 ```
