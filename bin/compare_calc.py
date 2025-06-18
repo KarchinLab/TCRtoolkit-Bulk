@@ -62,9 +62,6 @@ for file in files:
     file = os.path.basename(file)
     file = os.path.join(data_dir, file)
     df = pd.read_csv(file, sep='\t', header=0)
-
-    # Rename columns
-    df = df.rename(columns={'count (templates/reads)': 'read_count', 'frequencyCount (%)': 'frequency'})
     dfs[file] = df
 
 print('number of files in dfs: ' + str(len(dfs)))
@@ -77,7 +74,7 @@ jaccard_mat = np.zeros((len(samples), len(samples)))
 for i, sample1 in enumerate(samples):
     for j, sample2 in enumerate(samples):
         # calculate jaccard index
-        value = jaccard_index(dfs[sample1]['aminoAcid'], dfs[sample2]['aminoAcid'])
+        value = jaccard_index(dfs[sample1]['junction_aa'], dfs[sample2]['junction_aa'])
         # store in numpy array
         jaccard_mat[i, j] = value
 
@@ -94,7 +91,7 @@ sorensen_mat = np.zeros((len(samples), len(samples)))
 for i, sample1 in enumerate(samples):
     for j, sample2 in enumerate(samples):
         # calculate sorensen index
-        value = sorensen_index(dfs[sample1]['aminoAcid'], dfs[sample2]['aminoAcid'])
+        value = sorensen_index(dfs[sample1]['junction_aa'], dfs[sample2]['junction_aa'])
         # store in numpy array
         sorensen_mat[i, j] = value
 
@@ -130,7 +127,7 @@ morisita_df.to_csv('morisita_mat.csv', index=True, header=True)
 # for i, sample1 in enumerate(samples):
 #     for j, sample2 in enumerate(samples):
 #         # calculate jensen shannon distance
-#         value = jensen_shannon_distance(dfs[sample1][['aminoAcid', 'read_count']], dfs[sample2][['aminoAcid', 'read_count']])
+#         value = jensen_shannon_distance(dfs[sample1][['junction_aa', 'duplicate_count']], dfs[sample2][['junction_aa', 'duplicate_count']])
 #         # store in numpy array
 #         jsd_mat[i, j] = value
 

@@ -26,10 +26,10 @@ process GLIPH2_TURBOGLIPH {
 
     # During testing, including TRBJ column was causing issues in clustering step. Removing and reinserting afterwards.
     df <- read.csv("$concat_cdr3", sep = "\t", stringsAsFactors = FALSE, check.names = FALSE)
-    df2 <- subset(df, select = c('CDR3b', 'TRBV', 'patient', 'counts'))
-
+    # df2 <- subset(df, select = c('CDR3b', 'TRBV', 'patient', 'counts'))
+    str(df)
     result <- turboGliph::gliph2(
-        cdr3_sequences = df2,
+        cdr3_sequences = df,
         result_folder = "./",
         lcminp = ${params.local_min_pvalue},
         sim_depth = ${params.simulation_depth},
@@ -38,7 +38,7 @@ process GLIPH2_TURBOGLIPH {
         all_aa_interchangeable = FALSE,
         n_cores = ${task.cpus}
     )
-    
+
     df3 <- read.csv('cluster_member_details.txt', sep = '\t', stringsAsFactors = FALSE, check.names = FALSE)
     df3 <- merge(df3, df[, c("CDR3b", "TRBV", "patient", "TRBJ", 'counts')], by = c("CDR3b", "TRBV", "patient", 'counts'), all.x = TRUE)
     write.table(df3, "cluster_member_details.txt", sep = "\t", row.names = FALSE, quote = FALSE)

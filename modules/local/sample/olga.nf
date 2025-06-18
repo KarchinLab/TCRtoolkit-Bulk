@@ -17,8 +17,8 @@ process OLGA {
     import pandas as pd
 
     df = pd.read_csv("${count_table}", sep="\t")
-    df = df.dropna(subset=["aminoAcid"])
-    df = df["aminoAcid"]
+    df = df.dropna(subset=["junction_aa"])
+    df = df["junction_aa"]
     df.to_csv("output.tsv", sep="\t", index=False, header=False)
     EOF
 
@@ -33,15 +33,15 @@ process OLGA {
 
     # Load count and probability generation tables and merge
     df1 = pd.read_csv("${count_table}", sep="\t")
-    df1 = df1.dropna(subset=["aminoAcid"])
-    df2 = pd.read_csv('${sample_meta[0]}_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['aminoAcid', 'pgen'])
-    merged_df = pd.merge(df1, df2, on='aminoAcid', how='left')
+    df1 = df1.dropna(subset=["junction_aa"])
+    df2 = pd.read_csv('${sample_meta[0]}_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['junction_aa', 'pgen'])
+    merged_df = pd.merge(df1, df2, on='junction_aa', how='left')
     merged_df.to_csv("${sample_meta[0]}_tcr_pgen.tsv", sep="\t", index=False)
 
     # Drop rows where pgen is 0
     merged_df = merged_df[merged_df['pgen'] != 0]
     log_probs = np.log10(merged_df['pgen'])
-    cdr3_counts = merged_df['count (templates/reads)']
+    cdr3_counts = merged_df['duplicate_count']
 
     # Plot histogram
     plt.figure(figsize=(8, 5))

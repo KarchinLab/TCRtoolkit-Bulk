@@ -47,7 +47,7 @@ def main():
         df['sample'] = row['sample']
         
         # Select relevant columns
-        df = df[['aminoAcid', 'vGeneName', 'jGeneName', 'patient', 'count (templates/reads)', 'sample']]
+        df = df[['junction_aa', 'v_call', 'j_call', 'patient', 'duplicate_count', 'sample']]
         dfs.append(df)
 
 
@@ -56,10 +56,10 @@ def main():
 
     # Rename columns as required
     df_combined = df_combined.rename(columns={
-        'aminoAcid': 'CDR3b',
-        'vGeneName': 'TRBV',
-        'jGeneName': 'TRBJ',
-        'count (templates/reads)': 'counts'
+        'junction_aa': 'CDR3b',
+        'v_call': 'TRBV',
+        'j_call': 'TRBJ',
+        'duplicate_count': 'counts'
     })
     df_combined = df_combined[df_combined['CDR3b'].notna()]
 

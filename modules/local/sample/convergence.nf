@@ -19,12 +19,12 @@ process CONVERGENCE {
     import matplotlib.pyplot as plt
 
     # Load your TCR data (make sure the file has 'cdr3_aa' and 'cdr3_nt' columns)
-    df = pd.read_csv("${count_table}", sep="\t", usecols=["aminoAcid", "nucleotide"])
-    df = df.dropna(subset=["aminoAcid"])
+    df = pd.read_csv("${count_table}", sep="\t", usecols=["junction_aa", "sequence"])
+    df = df.dropna(subset=["junction_aa"])
 
     # Group by amino acid sequence and count unique nucleotide sequences (convergence)
     convergence_df = (
-        df.groupby("aminoAcid")["nucleotide"]
+        df.groupby("junction_aa")["sequence"]
         .nunique()
         .reset_index(name="convergence")
     )

@@ -160,7 +160,7 @@ if __name__ == "__main__":
     )
     add_logging_args(parser)
     args = parser.parse_args()
-    
+
     configure_logging(args)
     logger = logging.getLogger("tcrdist")
 
@@ -184,18 +184,17 @@ if __name__ == "__main__":
 
     df = pd.read_table(args.sample_tsv, delimiter = '\t')
 
-    df = df[['nucleotide', 'aminoAcid', 'vMaxResolved', 'vGeneNameTies', 'count (templates/reads)']]
-    df["vMaxResolved"] = df.apply(lambda row: find_matching_gene(row, db), axis=1)
+    df = df[['sequence', 'junction_aa', 'v_call', 'duplicate_count']]
+    # df["vMaxResolved"] = df.apply(lambda row: find_matching_gene(row, db), axis=1)
 
-    df = df.rename(columns={'nucleotide': 'cdr3_b_nucseq',
-                        'aminoAcid': 'cdr3_b_aa',
-                        'vMaxResolved': 'v_b_gene',
-                        'count (templates/reads)': 'count'
+    df = df.rename(columns={'sequence': 'cdr3_b_nucseq',
+                        'junction_aa': 'cdr3_b_aa',
+                        'v_call': 'v_b_gene',
+                        'duplicate_count': 'count'
                         })
 
     df = df[df['cdr3_b_aa'].notna()]
     df = df[df['v_b_gene'].notna()]
-    df = df.drop('vGeneNameTies', axis=1)
 
     # --- 2. Calculate distance matrix ---
     # Levenshtein distance matrix
