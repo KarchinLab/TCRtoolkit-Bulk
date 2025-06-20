@@ -28,10 +28,7 @@ def calc_sample_stats(sample_meta, counts):
     simpson_index_corrected = sum(clone_counts*(clone_counts-1))/(num_TCRs*(num_TCRs-1))
 
     ## tcr productivity stats
-    def tf_to_bool(val):
-        return {"T": True, "F": False}.get(val, val)
-
-    counts["productive"] = counts["productive"].map(tf_to_bool)
+    counts["productive"] = counts["productive"].map({"true": True, "false": False}).astype("boolean")
 
     # count number of productive clones
     num_prod = sum(counts['productive'])
@@ -92,13 +89,13 @@ def calc_sample_stats(sample_meta, counts):
     d_family = counts['dFamilyName'].value_counts(dropna=False).to_frame().T.sort_index(axis=1)
     j_family = counts['jFamilyName'].value_counts(dropna=False).to_frame().T.sort_index(axis=1)
 
-    # generate a list of all possible columns names from TCRBV01-TCRBV30
+    # generate a list of all possible columns names from TRBV1-TRBV30
     all_v_fam = [f'TRBV{i}' for i in range(1, 31)]
 
-    # generate a list of all possible columns names from TCRBD01-TCRBD02
+    # generate a list of all possible columns names from TRBD1-TRBD2
     all_d_fam = [f'TRBD{i}' for i in range(1, 3)]
 
-    # generate a list of all possible columns names from TCRBJ01-TCRBJ02
+    # generate a list of all possible columns names from TRBJ1-TRBJ2
     all_j_fam = [f'TRBJ{i}' for i in range(1, 3)]
 
     # add missing columns to v_family dataframe by reindexing
