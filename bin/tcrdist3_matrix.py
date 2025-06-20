@@ -196,6 +196,9 @@ if __name__ == "__main__":
     df = df[df['cdr3_b_aa'].notna()]
     df = df[df['v_b_gene'].notna()]
 
+    # If allele information is not specified (as indicated by *00), replace with *01
+    df['v_b_gene'] = df['v_b_gene'].apply(lambda x: x.replace('*00', '*01'))
+
     # --- 2. Calculate distance matrix ---
     # Levenshtein distance matrix
     if args.distance_metric == "levenshtein":
