@@ -1,7 +1,6 @@
 {
     "sample_lvl": "$.params.dataset.paramJson.sample_lvl",
     "compare_lvl": "$.params.dataset.paramJson.compare_lvl",
-    "data_dir": "$.params.inputs[0].s3|/data/",
     "matrix_sparsity": "$.params.dataset.paramJson.matrix_sparsity",
     "distance_metric": "$.params.dataset.paramJson.distance_metric",
     "kmer_min_depth": "$.params.dataset.paramJson.kmer_min_depth",
