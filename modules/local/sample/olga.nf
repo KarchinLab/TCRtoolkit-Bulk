@@ -1,5 +1,5 @@
 process OLGA {
-    tag "${sample_meta[0]}"
+    tag "${sample_meta.sample}"
     label 'process_low'
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
@@ -7,8 +7,8 @@ process OLGA {
     tuple val(sample_meta), path(count_table)
 
     output:
-    path "${sample_meta[0]}_tcr_pgen.tsv", emit: "olga_output"
-    path "${sample_meta[0]}_tcr_pgen_histogram.png"
+    path "${sample_meta.sample}_tcr_pgen.tsv", emit: "olga_output"
+    path "${sample_meta.sample}_tcr_pgen_histogram.png"
 
     script:
     """
@@ -24,7 +24,7 @@ process OLGA {
 
     python dropAA.py
 
-    olga-compute_pgen --humanTRB -i output.tsv -o "${sample_meta[0]}_pgen.tsv"
+    olga-compute_pgen --humanTRB -i output.tsv -o "${sample_meta.sample}_pgen.tsv"
 
     python - <<EOF
     import pandas as pd
@@ -34,9 +34,9 @@ process OLGA {
     # Load count and probability generation tables and merge
     df1 = pd.read_csv("${count_table}", sep="\t")
     df1 = df1.dropna(subset=["junction_aa"])
-    df2 = pd.read_csv('${sample_meta[0]}_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['junction_aa', 'pgen'])
+    df2 = pd.read_csv('${sample_meta.sample}_pgen.tsv', sep='\t', header=None, usecols=[0, 1], names=['junction_aa', 'pgen'])
     merged_df = pd.merge(df1, df2, on='junction_aa', how='left')
-    merged_df.to_csv("${sample_meta[0]}_tcr_pgen.tsv", sep="\t", index=False)
+    merged_df.to_csv("${sample_meta.sample}_tcr_pgen.tsv", sep="\t", index=False)
 
     # Drop rows where pgen is 0
     merged_df = merged_df[merged_df['pgen'] != 0]
@@ -50,11 +50,11 @@ process OLGA {
     # Label with LaTeX formatting
     plt.xlabel('log_10 Generation Probability')
     plt.ylabel('Probability Density')
-    plt.title(f'${sample_meta[0]} TCR Generation Probability Histogram')
+    plt.title(f'${sample_meta.sample} TCR Generation Probability Histogram')
     # plt.grid(True)
 
     # Save to file
-    plt.savefig("${sample_meta[0]}_tcr_pgen_histogram.png", dpi=300, bbox_inches="tight")
+    plt.savefig("${sample_meta.sample}_tcr_pgen_histogram.png", dpi=300, bbox_inches="tight")
     plt.close()
     EOF
     """

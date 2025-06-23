@@ -4,7 +4,6 @@ process COMPARE_CALC {
     
     input:
     path sample_utf8
-    path data_dir
 
     output:
     path 'jaccard_mat.csv', emit: jaccard_mat
@@ -15,6 +14,5 @@ process COMPARE_CALC {
     """
     compare_calc.py \
         -s $sample_utf8 \
-        -d $data_dir
     """
 }

@@ -4,7 +4,7 @@ import argparse
 import pandas as pd
 
 # do any processing of the samplesheet here
-def samplesheet(samplesheet, data_dir):
+def samplesheet(samplesheet):
     ss = pd.read_csv(samplesheet, sep=',')
     ss.to_csv('samplesheet_utf8.csv', index=False, encoding='utf-8-sig')
     
@@ -21,14 +21,9 @@ def main():
                         type=str, 
                         help='sample metadata passed in through samples CSV file')
 
-    parser.add_argument('-d', '--data_dir',
-                        metavar='data_dir',
-                        type=str,
-                        help='path to data directory')
-
     args = parser.parse_args()
 
-    samplesheet(args.samplesheet, args.data_dir)
+    samplesheet(args.samplesheet)
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,5 @@
 process CONVERGENCE {
-    tag "${sample_meta[0]}"
+    tag "${sample_meta.sample}"
     label 'process_low'
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 

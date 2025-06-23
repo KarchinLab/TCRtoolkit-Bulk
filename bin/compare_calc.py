@@ -12,6 +12,7 @@ import os
 import sys
 import csv
 from scipy.stats import entropy
+from utils import jaccard_index, sorensen_index, morisita_horn_index #, jensen_shannon_distance
 
 print('-- ENTERED compare_calc.py--')
 print('-- THE TIME IS: --' + str(pd.Timestamp.now()))
@@ -28,17 +29,8 @@ parser.add_argument('-s', '--sample_utf8',
 #                     metavar='meta_data',
 #                     type=str,
 #                     help='metadata CSV file initially passed to nextflow run command')
-parser.add_argument('-d', '--data_dir',
-                    metavar='data_dir',
-                    type=str,
-                    help='path to data directory')
 
 args = parser.parse_args() 
-
-## Import project directory path
-data_dir = args.data_dir
-
-from utils import jaccard_index, sorensen_index, morisita_horn_index #, jensen_shannon_distance
 
 ## Read in sample table CSV file
 ## convert metadata to list
@@ -59,8 +51,6 @@ files = sample_utf8['file']
 dfs = {}
 for file in files:
     # load data
-    file = os.path.basename(file)
-    file = os.path.join(data_dir, file)
     df = pd.read_csv(file, sep='\t', header=0)
     dfs[file] = df
 

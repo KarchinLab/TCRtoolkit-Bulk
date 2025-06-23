@@ -2,7 +2,8 @@
 // Check input samplesheet and get read channels
 //
 
-include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
+include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet/samplesheet_check'
+include { SAMPLESHEET_RESOLVE } from '../../modules/local/samplesheet/samplesheet_resolve'
 
 workflow INPUT_CHECK {
     take:
@@ -15,22 +16,43 @@ workflow INPUT_CHECK {
         .samplesheet_utf8
         .set { samplesheet_utf8 }
 
-    // 2. Parse samplesheet depending
-        
+    // 2. Parse samplesheet
     samplesheet_utf8
         .splitCsv(header: true, sep: ',')
-        .map { row -> 
-            meta_map = [row.sample , row.subject_id]
-            row.each { key, value ->
-                if (key != 'sample' && key != 'subject_id') {
-                    meta_map << value
-                }
-            }
-            [meta_map, file("${params.data_dir}/${row.file}")]}
+        .map { row ->
+            def meta = row.findAll { k, v -> k != 'file' }  // everything except the file column
+            def file_obj = file(row.file)
+            return [meta, file_obj]
+        }
         .set { sample_map }
+        
+    // 3. Write resolved samplesheet with absolute paths
+    sample_map
+        .map { meta, f ->
+            def row = (meta.values() + [f]).join(',')
+            return row
+        }
+        .collect()
+        .set { resolved_rows }
+
+    samplesheet_utf8
+        .splitCsv(header: true, sep: ',')
+        .first()
+        .map { row -> 
+            def header = row.keySet().findAll { it != 'file' } + ['file']
+            return header.join(',')  // <-- convert to string
+        }
+        .set { resolved_header }
+
+    SAMPLESHEET_RESOLVE(
+            resolved_rows,
+            resolved_header
+        )
+        .samplesheet_resolved
+        .set { samplesheet_resolved }
 
     emit:
     sample_map          //input to sample-level analysis
-    samplesheet_utf8    //input to comparison analysis
+    samplesheet_resolved    //input to comparison analysis
     // versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
 }

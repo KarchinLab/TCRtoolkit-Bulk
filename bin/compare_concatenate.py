@@ -16,25 +16,18 @@ def main():
     parser = argparse.ArgumentParser(description="Take positional args")
 
     # Add positional arguments
-    parser.add_argument("data_dir")
     parser.add_argument("samplesheet")
 
     # Parse the arguments
     args = parser.parse_args()
 
     # Print the arguments
-    print("data_dir: ", args.data_dir)
     print("samplesheet: ", args.samplesheet)
-
     samplesheet = pd.read_csv(args.samplesheet, header=0)
-
     dfs = []
-    for index, row in samplesheet.iterrows():
-        file_path = os.path.basename(row['file'])
-        file_path = os.path.join(args.data_dir, file_path)
-        print(f"Loading {file_path}")
-        
+    for _, row in samplesheet.iterrows():
         # Read the TSV file into a dataframe
+        file_path = str(row['file'])
         df = pd.read_csv(file_path, sep="\t", header=0)
         
         # Get metadata

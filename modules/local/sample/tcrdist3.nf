@@ -1,5 +1,5 @@
 process TCRDIST3_MATRIX {
-    tag "${sample_meta[0]}"
+    tag "${sample_meta.sample}"
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
     input:
@@ -9,19 +9,19 @@ process TCRDIST3_MATRIX {
     path ref_db
 
     output:
-    tuple val(sample_meta), path("${sample_meta[0]}_distance_matrix.*"), emit: 'tcrdist_output'
-    path "${sample_meta[0]}_clone_df.csv", emit: 'clone_df'
+    tuple val(sample_meta), path("${sample_meta.sample}_distance_matrix.*"), emit: 'tcrdist_output'
+    path "${sample_meta.sample}_clone_df.csv", emit: 'clone_df'
     path "matrix_maximum_value.txt", emit: 'max_matrix_value'
 
     script:
     """
     # Run tcrdist3 on input
-    tcrdist3_matrix.py ${count_table} ${sample_meta[0]} ${matrix_sparsity} ${distance_metric} ${ref_db} ${task.cpus}
+    tcrdist3_matrix.py ${count_table} ${sample_meta.sample} ${matrix_sparsity} ${distance_metric} ${ref_db} ${task.cpus}
     """
 }
 
 process TCRDIST3_HISTOGRAM_CALC {
-    tag "${sample_meta[0]}"
+    tag "${sample_meta.sample}"
     label 'process_high'
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
@@ -32,8 +32,8 @@ process TCRDIST3_HISTOGRAM_CALC {
     val global_max_value
 
     output:
-    tuple val(sample_meta), path("${sample_meta[0]}_histogram_data.npz"), emit: 'histogram_data'
-    path "${sample_meta[0]}_histogram_ymax.txt", emit: 'max_histogram_count'
+    tuple val(sample_meta), path("${sample_meta.sample}_histogram_data.npz"), emit: 'histogram_data'
+    path "${sample_meta.sample}_histogram_ymax.txt", emit: 'max_histogram_count'
 
     script:
     """
@@ -79,17 +79,17 @@ process TCRDIST3_HISTOGRAM_CALC {
         counts, _ = np.histogram(lower_triangle, bins=bin_edges)
 
     # Save histogram data
-    np.savez("${sample_meta[0]}_histogram_data.npz", counts=counts, bin_edges=bin_edges)
+    np.savez("${sample_meta.sample}_histogram_data.npz", counts=counts, bin_edges=bin_edges)
 
     # Save max count value for y-axis standardization
-    with open("${sample_meta[0]}_histogram_ymax.txt", "w") as f:
+    with open("${sample_meta.sample}_histogram_ymax.txt", "w") as f:
         f.write(f"{int(counts.max())}\\n")
     EOF
     """
 }
 
 process TCRDIST3_HISTOGRAM_PLOT {
-    tag "${sample_meta[0]}"
+    tag "${sample_meta.sample}"
     label 'process_low'
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
@@ -98,7 +98,7 @@ process TCRDIST3_HISTOGRAM_PLOT {
     val y_max
 
     output:
-    path "${sample_meta[0]}_pairwise_distance_distribution_standardized.png", emit: 'final_histogram'
+    path "${sample_meta.sample}_pairwise_distance_distribution_standardized.png", emit: 'final_histogram'
 
     script:
     """
@@ -143,8 +143,8 @@ process TCRDIST3_HISTOGRAM_PLOT {
     plt.gca().yaxis.set_major_locator(ticker.LogLocator(base=10.0, subs=(1.0,), numticks=10))
     # plt.gca().yaxis.set_minor_locator(ticker.NullLocator()) 
     
-    plt.title("Distribution of Beta Chain Pairwise Distances - ${sample_meta[0]}")
-    plt.savefig("${sample_meta[0]}_pairwise_distance_distribution_standardized.png", dpi=300, bbox_inches="tight")
+    plt.title("Distribution of Beta Chain Pairwise Distances - ${sample_meta.sample}")
+    plt.savefig("${sample_meta.sample}_pairwise_distance_distribution_standardized.png", dpi=300, bbox_inches="tight")
     plt.close()
     EOF
     """

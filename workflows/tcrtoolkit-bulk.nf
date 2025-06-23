@@ -5,12 +5,11 @@
 */
 
 // Validate pipeline parameters
-def checkPathParamList = [ params.samplesheet, params.data_dir ]
+def checkPathParamList = [ params.samplesheet]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
 if (params.samplesheet) { samplesheet = file(params.samplesheet) } else { exit 1, 'Samplesheet not specified. Please, provide a --samplesheet=/path/to/samplesheet.csv !' }
-if (params.data_dir) { data_dir = params.data_dir } else { exit 1, 'Data directory not specified. Please, provide a --data_dir=/path/to/data_dir !' }
 if (params.outdir) { outdir = params.outdir } else { exit 1, 'Output directory not specified. Please, provide a --outdir=/path/to/outdir !' }
 
 /*
@@ -52,9 +51,7 @@ workflow TCRTOOLKIT_BULK {
 
     // Running comparison analysis
     if (levels.contains('compare') || levels.contains('complete')) {
-        COMPARE( INPUT_CHECK.out.samplesheet_utf8,
-                 params.project_name,
-                 file(params.data_dir) )
+        COMPARE( INPUT_CHECK.out.samplesheet_resolved )
     }
 }
 
