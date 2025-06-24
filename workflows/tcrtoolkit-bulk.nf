@@ -51,7 +51,8 @@ workflow TCRTOOLKIT_BULK {
 
     // Running comparison analysis
     if (levels.contains('compare') || levels.contains('complete')) {
-        COMPARE( INPUT_CHECK.out.samplesheet_resolved )
+        COMPARE( INPUT_CHECK.out.samplesheet_resolved,
+         INPUT_CHECK.out.all_sample_files)
     }
 }
 

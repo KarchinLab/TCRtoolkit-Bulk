@@ -23,19 +23,23 @@ workflow COMPARE {
 
     take:
     samplesheet_resolved
+    all_sample_files
 
     main:
-    COMPARE_CALC( samplesheet_resolved )
+    COMPARE_CALC( samplesheet_resolved,
+                    all_sample_files )
 
     COMPARE_PLOT( samplesheet_resolved,
                   COMPARE_CALC.out.jaccard_mat,
                   COMPARE_CALC.out.sorensen_mat,
                   COMPARE_CALC.out.morisita_mat,
                   file(params.compare_stats_template),
-                  params.project_name
+                  params.project_name,
+                  all_sample_files
                   )
 
-    COMPARE_CONCATENATE( samplesheet_resolved )
+    COMPARE_CONCATENATE( samplesheet_resolved,
+        all_sample_files )
 
     GLIPH2_TURBOGLIPH(
         COMPARE_CONCATENATE.out.concat_cdr3

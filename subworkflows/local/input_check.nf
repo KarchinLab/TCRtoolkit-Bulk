@@ -28,8 +28,13 @@ workflow INPUT_CHECK {
         
     // 3. Write resolved samplesheet with absolute paths
     sample_map
+        .map { _, f -> f }
+        .collect()
+        .set { all_sample_files }
+    
+    sample_map
         .map { meta, f ->
-            def row = (meta.values() + [f]).join(',')
+            def row = (meta.values() + [f.getName()]).join(',')
             return row
         }
         .collect()
@@ -54,5 +59,6 @@ workflow INPUT_CHECK {
     emit:
     sample_map          //input to sample-level analysis
     samplesheet_resolved    //input to comparison analysis
+    all_sample_files
     // versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
 }

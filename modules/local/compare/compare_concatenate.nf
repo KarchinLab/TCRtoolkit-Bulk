@@ -4,6 +4,7 @@ process COMPARE_CONCATENATE {
 
     input:
     path samplesheet_utf8
+    path all_sample_files
 
     output:
     path "concatenated_cdr3.txt", emit: "concat_cdr3"

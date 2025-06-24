@@ -9,6 +9,7 @@ process COMPARE_PLOT {
     path morisita_mat
     path compare_stats_template
     val project_name
+    path all_sample_files
 
     output:
     path 'compare_stats.html'

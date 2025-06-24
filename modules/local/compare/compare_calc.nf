@@ -4,6 +4,7 @@ process COMPARE_CALC {
     
     input:
     path sample_utf8
+    path all_sample_files
 
     output:
     path 'jaccard_mat.csv', emit: jaccard_mat
