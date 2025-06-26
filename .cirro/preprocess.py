@@ -28,12 +28,10 @@ ds.add_param("samplesheet", "samplesheet.csv")
 
 # 3. Set workflow_level value based on form input
 ds.logger.info("Setting workflow_level")
-if ds.params['sample_lvl'] == ds.params['compare_lvl'] == True:
-    workflow_level = ['complete']
-else:
-    workflow_lvls = ['sample', 'compare']
-    chosen_lvls = [ds.params['sample_lvl'], ds.params['compare_lvl']]
-    workflow_level = [i for i, j in zip(workflow_lvls, chosen_lvls) if j]
+
+levels = ['convert', 'sample', 'compare']
+flags = [ds.params['convert_lvl'], ds.params['sample_lvl'], ds.params['compare_lvl']]
+workflow_level = [lvl for lvl, flag in zip(levels, flags) if flag]
 
 ds.add_param('workflow_level', ','.join(workflow_level))
 

@@ -45,13 +45,16 @@ workflow TCRTOOLKIT_BULK {
 
     // Validate
     if (levels.contains('convert') && !['adaptive', 'cellranger'].contains(input_format)) {
-        error "To run Convert workflow, please specify a valid --input_format (adaptive or cellranger)"
+        println("\u001B[33m[WARN]\u001B[0m To run Convert workflow, please specify a valid convertible --input_format (adaptive or cellranger)")
+        if (!levels.contains('sample') && !levels.contains('compare')) {
+            return
+        }
     }
 
     // Checking input tables
     INPUT_CHECK( file(params.samplesheet) )
 
-    if (levels.contains('convert') || input_format in ['adaptive', 'cellranger']) {
+    if (input_format in ['adaptive', 'cellranger']) {
         AIRR_CONVERT( INPUT_CHECK.out.sample_map,
             input_format
             )
@@ -66,12 +69,12 @@ workflow TCRTOOLKIT_BULK {
         sample_map_final )
 
     // Running sample level analysis
-    if (levels.contains('sample') || levels.contains('complete')) {
+    if (levels.contains('sample')) {
         SAMPLE( sample_map_final )
     }
 
     // Running comparison analysis
-    if (levels.contains('compare') || levels.contains('complete')) {
+    if (levels.contains('compare')) {
         COMPARE( RESOLVE_SAMPLESHEET.out.samplesheet_resolved,
             RESOLVE_SAMPLESHEET.out.all_sample_files)
     }
