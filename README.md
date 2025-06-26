@@ -44,5 +44,6 @@ Below is a minimal example of how to run the pipeline. The `minimal-example` dat
 nextflow run main.nf --data_dir test_data/minimal-example \
     --samplesheet test_data/minimal-example/samplesheet.csv \
     --outdir out-minimal-dev \
+    --input_format adaptive \
     --max_memory 10GB --max_cpus 4
 ```

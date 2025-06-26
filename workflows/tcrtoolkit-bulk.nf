@@ -22,10 +22,11 @@ if (params.outdir) { outdir = params.outdir } else { exit 1, 'Output directory n
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
-include { SAMPLE      } from '../subworkflows/local/sample'
-include { COMPARE     } from '../subworkflows/local/compare'
-
+include { INPUT_CHECK }         from '../subworkflows/local/input_check'
+include { AIRR_CONVERT }        from '../subworkflows/local/airr_convert'
+include { RESOLVE_SAMPLESHEET } from '../subworkflows/local/resolve_samplesheet'
+include { SAMPLE }              from '../subworkflows/local/sample'
+include { COMPARE }             from '../subworkflows/local/compare'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,20 +40,40 @@ workflow TCRTOOLKIT_BULK {
     println("Running TCRTOOLKIT_BULK workflow...")
 
     // Split the workflow_level parameter into a list of levels
-    def levels = params.workflow_level.tokenize(',')
+    def levels = params.workflow_level.toLowerCase().tokenize(',')
+    def input_format = params.input_format.toLowerCase()
+
+    // Validate
+    if (levels.contains('convert') && !['adaptive', 'cellranger'].contains(input_format)) {
+        error "To run Convert workflow, please specify a valid --input_format (adaptive or cellranger)"
+    }
 
     // Checking input tables
     INPUT_CHECK( file(params.samplesheet) )
 
+    if (levels.contains('convert') || input_format in ['adaptive', 'cellranger']) {
+        AIRR_CONVERT( INPUT_CHECK.out.sample_map,
+            input_format
+            )
+            .sample_map_converted
+            .set { sample_map_final }
+    } else {
+        INPUT_CHECK.out.sample_map
+            .set { sample_map_final }
+    }
+
+    RESOLVE_SAMPLESHEET( INPUT_CHECK.out.samplesheet_utf8,
+        sample_map_final )
+
     // Running sample level analysis
     if (levels.contains('sample') || levels.contains('complete')) {
-        SAMPLE( INPUT_CHECK.out.sample_map )
+        SAMPLE( sample_map_final )
     }
 
     // Running comparison analysis
     if (levels.contains('compare') || levels.contains('complete')) {
-        COMPARE( INPUT_CHECK.out.samplesheet_resolved,
-         INPUT_CHECK.out.all_sample_files)
+        COMPARE( RESOLVE_SAMPLESHEET.out.samplesheet_resolved,
+            RESOLVE_SAMPLESHEET.out.all_sample_files)
     }
 }
 
