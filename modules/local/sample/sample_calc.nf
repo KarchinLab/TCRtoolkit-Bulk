@@ -1,5 +1,5 @@
 process SAMPLE_CALC {
-    tag "${sample_meta[0]}"
+    tag "${sample_meta.sample}"
     label 'process_single'
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 

@@ -70,8 +70,8 @@ print('Date and time:         ' + str(datetime.datetime.now()))
 df = pd.read_csv(sample_stats_csv, sep=',', header=None, 
                  names=['sample_id', 'patient_id', 'timepoint', 'origin',
                         'num_clones', 'num_TCRs', 'simpson_index', 'simpson_index_corrected', 'clonality',
-                        'num_in', 'num_out', 'num_stop', 'pct_prod', 'pct_out', 'pct_stop', 'pct_nonprod',
-                        'cdr3_avg_len', 'num_convergent', 'ratio_convergent'])
+                        'num_prod', 'num_nonprod', 'pct_prod', 'pct_nonprod',
+                        'productive_cdr3_avg_len', 'num_convergent', 'ratio_convergent'])
 # print('-- Imported sample_stats_csv as `df`...')
 
 ## reading sample metadata
@@ -163,19 +163,19 @@ $$ Percent \text{ } productive \text{ } TCRs = \frac P N $$
 
 where $P$ is the number of productive TCRs and $N$ is the total number of TCRs in a given sample. 
 
-## Average CDR3 Length
+## Average productive CDR3 Length
 
 ```{python}
 fig = px.box(df, 
              x = 'timepoint', 
-             y='cdr3_avg_len', 
+             y='productive_cdr3_avg_len', 
              color='origin', 
              points='all', hover_data=['sample_id'],
              category_orders={'timepoint': timepts})
 fig.show()
 ```
 
-**Figure 5. Average CDR3 Length** The average length of the CDR3 region of the TCR. The CDR3 region is the most variable region of the TCR and is the region that determines antigen specificity.
+**Figure 5. Average Productive CDR3 Length** The average length of the CDR3 region of the TCR for productive clones. The CDR3 region is the most variable region of the TCR and is the region that determines antigen specificity.
 
 ## TCR Convergence
 
@@ -231,7 +231,7 @@ for patient in v_family_long.patient_id.unique().tolist():
 
     for g, c in zip(current.v_gene.unique(), colors):
         plot_df = current[current.v_gene == g]
-        if g == 'TCRBV30':
+        if g == 'TRBV30':
             fig.add_trace(
                 go.Bar(x=[plot_df.timepoint, plot_df.origin], 
                        y=plot_df.proportion, name=g, marker_color=c,

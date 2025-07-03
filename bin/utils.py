@@ -51,15 +51,15 @@ def sorensen_index(sample1, sample2):
 
 def morisita_horn_index(dfs, sample1, sample2):
     # create sets of amino acid sequences
-    set1 = set(dfs[sample1]['aminoAcid'])
-    set2 = set(dfs[sample2]['aminoAcid'])
+    set1 = set(dfs[sample1]['junction_aa'])
+    set2 = set(dfs[sample2]['junction_aa'])
 
     # identify union of sets
     union = set1.union(set2)
 
     # get counts of aa sequences in sample1 and sample2
-    df1 = dfs[sample1].groupby('aminoAcid')['read_count'].sum().reindex(union).fillna(0)
-    df2 = dfs[sample2].groupby('aminoAcid')['read_count'].sum().reindex(union).fillna(0)
+    df1 = dfs[sample1].groupby('junction_aa')['duplicate_count'].sum().reindex(union).fillna(0)
+    df2 = dfs[sample2].groupby('junction_aa')['duplicate_count'].sum().reindex(union).fillna(0)
     n1i = df1.values
     n2i = df2.values
 
@@ -79,18 +79,18 @@ def morisita_horn_index(dfs, sample1, sample2):
     return numerator / denominator
 
 def jensen_shannon_distance(sample1, sample2):
-    # Merge the two samples based on aminoAcid column
-    merged = pd.merge(sample1, sample2, on='aminoAcid', how='outer', suffixes=('_1', '_2')).fillna(0)
+    # Merge the two samples based on junction_aa column
+    merged = pd.merge(sample1, sample2, on='junction_aa', how='outer', suffixes=('_1', '_2')).fillna(0)
     # Enter probability distributions into the distance function
-    return distance.jensenshannon(merged['read_count_1'], merged['read_count_2'])
+    return distance.jensenshannon(merged['duplicate_count_1'], merged['duplicate_count_2'])
 
 
 #### =========================== LEGACY CODE ============================== ####
 
 # def morisita_horn_index(dfs, sample1, sample2):
 #     # create sets of amino acid sequences
-#     set1 = set(dfs[sample1]['aminoAcid'])
-#     set2 = set(dfs[sample2]['aminoAcid'])
+#     set1 = set(dfs[sample1]['junction_aa'])
+#     set2 = set(dfs[sample2]['junction_aa'])
 #     # identify union of sets
 #     union = set1.union(set2)
 #     # loop through union of aa sequences and calculate morisita index between sample1 and sample2
@@ -102,22 +102,22 @@ def jensen_shannon_distance(sample1, sample2):
 #         #     print('- on aa: ' + aa)
 
 #         # get counts of aa sequences in sample1 and sample2
-#         if aa not in set(dfs[sample1]['aminoAcid']):
+#         if aa not in set(dfs[sample1]['junction_aa']):
 #             n1i = 0
 #         else:
-#             n1i = dfs[sample1].where(dfs[sample1]['aminoAcid'] == aa)['read_count'].dropna().values[0]
+#             n1i = dfs[sample1].where(dfs[sample1]['junction_aa'] == aa)['duplicate_count'].dropna().values[0]
 
-#         if aa not in set(dfs[sample2]['aminoAcid']):
+#         if aa not in set(dfs[sample2]['junction_aa']):
 #             n2i = 0
 #         else:
-#             n2i = dfs[sample2].where(dfs[sample2]['aminoAcid'] == aa)['read_count'].dropna().values[0]
+#             n2i = dfs[sample2].where(dfs[sample2]['junction_aa'] == aa)['duplicate_count'].dropna().values[0]
             
 #         product = n1i * n2i
 #         products.append(product)
 
 #     # calculate simpson index values for sample1 and sample2
-#     s1_si = sum([(count/sum(dfs[sample1]['read_count']))**2 for count in dfs[sample1]['read_count']])
-#     s2_si = sum([(count/sum(dfs[sample2]['read_count']))**2 for count in dfs[sample2]['read_count']])
+#     s1_si = sum([(count/sum(dfs[sample1]['duplicate_count']))**2 for count in dfs[sample1]['duplicate_count']])
+#     s2_si = sum([(count/sum(dfs[sample2]['duplicate_count']))**2 for count in dfs[sample2]['duplicate_count']])
 
 #     numerator = 2 * sum(products)
 #     denominator = (s1_si + s2_si) * (len(set1)*len(set2))

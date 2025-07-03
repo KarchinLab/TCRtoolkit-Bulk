@@ -1,4 +1,4 @@
-process COMPARE_CLONAL_PUBLICITY {
+process TCRSHARING_CALC {
     label 'process_low'
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
