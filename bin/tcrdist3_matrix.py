@@ -4,6 +4,7 @@ import argparse
 import logging
 import re
 
+import h5py
 import numpy as np
 import pandas as pd
 import Levenshtein
@@ -185,7 +186,6 @@ if __name__ == "__main__":
     df = pd.read_table(args.sample_tsv, delimiter = '\t')
 
     df = df[['sequence', 'junction_aa', 'v_call', 'duplicate_count']]
-    # df["vMaxResolved"] = df.apply(lambda row: find_matching_gene(row, db), axis=1)
 
     df = df.rename(columns={'sequence': 'cdr3_b_nucseq',
                         'junction_aa': 'cdr3_b_aa',
@@ -262,7 +262,11 @@ if __name__ == "__main__":
     else:
         tr.compute_sparse_rect_distances(radius = radius, chunk_size = 100)
         max_val = tr.rw_beta.max()
-        sp.save_npz(f"{basename}_distance_matrix.npz", tr.rw_beta)
-    
+        with h5py.File(f"{basename}_distance_matrix.hdf5", "w") as f:
+            f.create_dataset("data", data=tr.rw_beta.data)
+            f.create_dataset("indices", data=tr.rw_beta.indices)
+            f.create_dataset("indptr", data=tr.rw_beta.indptr)
+            f.create_dataset("shape", data=tr.rw_beta.shape)
+
     with open(f"matrix_maximum_value.txt", "w") as f:
         f.write(str(max_val))

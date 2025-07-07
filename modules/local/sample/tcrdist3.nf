@@ -32,13 +32,15 @@ process TCRDIST3_HISTOGRAM_CALC {
     val global_max_value
 
     output:
-    tuple val(sample_meta), path("${sample_meta.sample}_histogram_data.npz"), emit: 'histogram_data'
+    tuple val(sample_meta), path("${sample_meta.sample}_histogram_data.hdf5"), emit: 'histogram_data'
     path "${sample_meta.sample}_histogram_ymax.txt", emit: 'max_histogram_count'
 
     script:
     """
     python - <<EOF
     import os
+    
+    import h5py
     import numpy as np
     import matplotlib.pyplot as plt
     import scipy.sparse as sp
@@ -49,8 +51,17 @@ process TCRDIST3_HISTOGRAM_CALC {
     if ext == ".csv":
         full_matrix = np.loadtxt(input_path, delimiter=',')
         lower_triangle = full_matrix[np.tril_indices(full_matrix.shape[0], k=-1)]
-    elif ext == ".npz":
-        sparse_matrix = sp.load_npz(input_path).tocoo()
+    elif ext == ".hdf5":
+        with h5py.File(input_path, "r") as f:
+            data = f["data"][:]
+            indices = f["indices"][:]
+            indptr = f["indptr"][:]
+            shape = tuple(f["shape"][:])  # convert from ndarray to tuple
+
+            sparse_matrix_csr = sp.csr_matrix((data, indices, indptr), shape=shape)
+
+        # Convert to COO format
+        sparse_matrix = sparse_matrix_csr.tocoo()
 
         # Extract the lower triangle values (excluding diagonal)
         mask = sparse_matrix.row > sparse_matrix.col
@@ -79,7 +90,9 @@ process TCRDIST3_HISTOGRAM_CALC {
         counts, _ = np.histogram(lower_triangle, bins=bin_edges)
 
     # Save histogram data
-    np.savez("${sample_meta.sample}_histogram_data.npz", counts=counts, bin_edges=bin_edges)
+    with h5py.File(f"${sample_meta.sample}_histogram_data.hdf5", "w") as f:
+        f.create_dataset("counts", data=counts)
+        f.create_dataset("bin_edges", data=bin_edges)
 
     # Save max count value for y-axis standardization
     with open("${sample_meta.sample}_histogram_ymax.txt", "w") as f:
@@ -94,7 +107,7 @@ process TCRDIST3_HISTOGRAM_PLOT {
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
     input:
-    tuple val(sample_meta), path(histogram_data_npz)
+    tuple val(sample_meta), path(histogram_data)
     val y_max
 
     output:
@@ -103,14 +116,15 @@ process TCRDIST3_HISTOGRAM_PLOT {
     script:
     """
     python - <<EOF
+    import h5py
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as ticker
 
     # Load histogram data
-    data = np.load("${histogram_data_npz}")
-    counts = data["counts"]
-    bin_edges = data["bin_edges"]
+    with h5py.File(f"${histogram_data}", "r") as f:
+        counts = f["counts"][:]
+        bin_edges = f["bin_edges"][:]
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
     # Plot
