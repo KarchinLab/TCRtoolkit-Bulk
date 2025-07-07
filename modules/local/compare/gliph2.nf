@@ -27,7 +27,7 @@ process GLIPH2_TURBOGLIPH {
     # During testing, including TRBJ column was causing issues in clustering step. Removing and reinserting afterwards.
     df <- read.csv("$concat_cdr3", sep = "\t", stringsAsFactors = FALSE, check.names = FALSE)
     # df2 <- subset(df, select = c('CDR3b', 'TRBV', 'patient', 'counts'))
-    str(df)
+
     result <- turboGliph::gliph2(
         cdr3_sequences = df,
         result_folder = "./",

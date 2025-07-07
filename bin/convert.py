@@ -54,6 +54,7 @@ def derive_junction_fields(row):
                     best_frame = frame
                     break
             except Exception:
+                logger.exception(f"Error translating junction from frame {frame}")
                 continue
         if best_frame is None:
             best_frame = 0
@@ -61,7 +62,8 @@ def derive_junction_fields(row):
         full_aa = str(Seq(seq[best_frame:]).translate(to_stop=True))
         return pd.Series([seq, junction, aa, full_aa, best_frame])
     except Exception:
-        return pd.Series(["", "", "", "", None])
+        logger.exception(f"Error deriving junction fields")
+        return pd.Series(["", "", "", "", pd.NA])
 
 def resolve_gene_call(gene_name, gene_allele, gene_name_ties, gene_allele_ties):
     # Step 1: Resolve GeneName
@@ -197,8 +199,6 @@ def adaptive_to_airr(input_df, basename, imgt_lookup, airr_schema):
 )
     df["productive"] = df["sequenceStatus"].apply(status_to_productive)
 
-    # df["duplicate_count"] = df["count (templates/reads)"]
-    # df["duplicate_frequency_percent"] = df["frequencyCount (%)"]
     df.rename(columns={"count (templates/reads)": "duplicate_count",
                        "frequencyCount (%)": "duplicate_frequency_percent"}, inplace=True)
 
@@ -243,7 +243,6 @@ def adaptive_to_airr(input_df, basename, imgt_lookup, airr_schema):
 
     # Order columns
     ordered_cols = [col for col in properties if col in df.columns]
-    extra_cols = [col for col in df.columns if col not in ordered_cols]
 
     # Append additional Adaptive columns
     df = df[ordered_cols + ['duplicate_frequency_percent']]
