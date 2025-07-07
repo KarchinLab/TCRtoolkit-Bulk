@@ -13,12 +13,13 @@ import numpy as np
 from scipy.stats import entropy
 import numpy as np
 import csv
+import re
 
 def calc_sample_stats(sample_meta, counts):
     """Calculate sample level statistics of TCR repertoire."""
 
     ## first pass stats
-    clone_counts = counts['read_count']
+    clone_counts = counts['duplicate_count']
     clone_entropy = entropy(clone_counts, base=2)
     num_clones = len(clone_counts)
     num_TCRs = sum(clone_counts)
@@ -27,36 +28,32 @@ def calc_sample_stats(sample_meta, counts):
     simpson_index_corrected = sum(clone_counts*(clone_counts-1))/(num_TCRs*(num_TCRs-1))
 
     ## tcr productivity stats
-    clone_prod = counts['sequenceStatus']
-    # print('clone_prod looks like this: ' + str(clone_prod))
+    counts["productive"] = counts["productive"].map({"true": True, "false": False}).astype("boolean")
 
     # count number of productive clones
-    num_in = sum(clone_prod == 'In')
-    num_out = sum(clone_prod == 'Out')
-    num_stop = sum(clone_prod == 'Stop')
-    pct_prod = num_in / num_clones
-    pct_out = num_out / num_clones
-    pct_stop = num_stop / num_clones
-    pct_nonprod = pct_out + pct_stop
+    num_prod = sum(counts['productive'])
+    num_nonprod = num_clones - num_prod
+    pct_prod = num_prod / num_clones
+    pct_nonprod = num_nonprod / num_clones
 
     ## cdr3 info
-    cdr3_lens = counts['cdr3Length']
-    cdr3_avg_len = np.mean(cdr3_lens)
+    cdr3_lens = counts['junction_aa_length']
+    productive_cdr3_avg_len = np.mean([x*3 for x in cdr3_lens if x > 0])
 
     ## Calculate convergence for each T cell receptor
-    aas = counts[counts.aminoAcid.notnull()].aminoAcid.unique()
+    aas = counts[counts.junction_aa.notnull()].junction_aa.unique()
     dict_df = {}
     for aa in aas:
-        dict_df[aa] = {'counts': counts[counts.aminoAcid == aa]}
+        dict_df[aa] = {'counts': counts[counts.junction_aa == aa]}
         # append key value pair to dict_df[aa] with key convergence equal to the number of rows in counts
-        dict_df[aa]['convergence'] = len(counts[counts.aminoAcid == aa])
+        dict_df[aa]['convergence'] = len(counts[counts.junction_aa == aa])
 
     ## calculate the number of covergent TCRs for each sample
     num_convergent = 0
     for aa in aas:
-      if dict_df[aa]['convergence'] > 1:
-        num_convergent += 1    
-    
+        if dict_df[aa]['convergence'] > 1:
+            num_convergent += 1    
+
     ## calculate ratio of convergent TCRs to total TCRs
     ratio_convergent = num_convergent/len(aas)
 
@@ -72,22 +69,34 @@ def calc_sample_stats(sample_meta, counts):
         writer = csv.writer(csvfile)
         writer.writerow([sample_meta[0], sample_meta[1], sample_meta[2], sample_meta[3],
                          num_clones, num_TCRs, simpson_index, simpson_index_corrected, clonality,
-                         num_in, num_out, num_stop, pct_prod, pct_out, pct_stop, pct_nonprod,
-                         cdr3_avg_len, num_convergent, ratio_convergent])
-        
+                         num_prod, num_nonprod, pct_prod, pct_nonprod,
+                         productive_cdr3_avg_len, num_convergent, ratio_convergent])
+
     # store v_family gene usage in a dataframe
+    def extract_trb_family(allele):
+        if pd.isna(allele):
+            return None
+        match = re.match(r'(TRB[V|D|J])(\d+)', allele)
+        return f"{match.group(1)}{match.group(2)}" if match else None
+
+    # Apply to each column
+    counts['vFamilyName'] = counts['v_call'].apply(extract_trb_family)
+    counts['dFamilyName'] = counts['d_call'].apply(extract_trb_family)
+    counts['jFamilyName'] = counts['j_call'].apply(extract_trb_family)
+
+    # Compute gene usage frequency per family
     v_family = counts['vFamilyName'].value_counts(dropna=False).to_frame().T.sort_index(axis=1)
     d_family = counts['dFamilyName'].value_counts(dropna=False).to_frame().T.sort_index(axis=1)
     j_family = counts['jFamilyName'].value_counts(dropna=False).to_frame().T.sort_index(axis=1)
 
-    # generate a list of all possible columns names from TCRBV01-TCRBV30
-    all_v_fam = ['TCRBV{:02d}'.format(i) for i in range(1, 31)]
+    # generate a list of all possible columns names from TRBV1-TRBV30
+    all_v_fam = [f'TRBV{i}' for i in range(1, 31)]
 
-    # generate a list of all possible columns names from TCRBD01-TCRBD02
-    all_d_fam = ['TCRBD{:02d}'.format(i) for i in range(1, 3)]
+    # generate a list of all possible columns names from TRBD1-TRBD2
+    all_d_fam = [f'TRBD{i}' for i in range(1, 3)]
 
-    # generate a list of all possible columns names from TCRBJ01-TCRBJ02
-    all_j_fam = ['TCRBJ{:02d}'.format(i) for i in range(1, 3)]
+    # generate a list of all possible columns names from TRBJ1-TRBJ2
+    all_j_fam = [f'TRBJ{i}' for i in range(1, 3)]
 
     # add missing columns to v_family dataframe by reindexing
     v_family_reindex = v_family.reindex(columns=all_v_fam, fill_value=0)
@@ -132,12 +141,10 @@ def main():
     args = parser.parse_args() 
 
     ## convert metadata to list
-    s = args.sample_meta
     sample_meta = args.sample_meta[1:-1].split(', ')
 
     # Read in the counts file
     counts = pd.read_csv(args.count_table, sep='\t', header=0)
-    counts = counts.rename(columns={'count (templates/reads)': 'read_count', 'frequencyCount (%)': 'frequency'})
 
     calc_sample_stats(sample_meta, counts)
 

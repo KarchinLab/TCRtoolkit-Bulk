@@ -5,13 +5,11 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { SAMPLE_CALC } from '../../modules/local/sample_calc'
-include { SAMPLE_PLOT } from '../../modules/local/sample_plot'
-include { TCRDIST3_MATRIX } from '../../modules/local/tcrdist3_matrix'
-include { TCRDIST3_HISTOGRAM_CALC } from '../../modules/local/tcrdist3_histogram_calc'
-include { TCRDIST3_HISTOGRAM_PLOT } from '../../modules/local/tcrdist3_histogram_plot'
-include { OLGA } from '../../modules/local/olga'
-include { CONVERGENCE } from '../../modules/local/convergence'
+include { SAMPLE_CALC } from '../../modules/local/sample/sample_calc'
+include { SAMPLE_PLOT } from '../../modules/local/sample/sample_plot'
+include { TCRDIST3_MATRIX; TCRDIST3_HISTOGRAM_CALC; TCRDIST3_HISTOGRAM_PLOT} from '../../modules/local/sample/tcrdist3'
+include { OLGA } from '../../modules/local/sample/olga'
+include { CONVERGENCE } from '../../modules/local/sample/convergence'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,24 +30,32 @@ workflow SAMPLE {
 
     SAMPLE_CALC.out.sample_csv
         .collectFile(name: 'sample_stats.csv', sort: true, 
-                     storeDir: "${params.output}/sample")
+                     storeDir: "${params.outdir}/sample")
         .set { sample_stats_csv }
 
     SAMPLE_CALC.out.v_family_csv
         .collectFile(name: 'v_family.csv', sort: true,
-                     storeDir: "${params.output}/sample")
+                     storeDir: "${params.outdir}/sample")
         .set { v_family_csv }
-        
+
     SAMPLE_CALC.out.d_family_csv
         .collectFile(name: 'd_family.csv', sort: true,
-                     storeDir: "${params.output}/sample")
+                     storeDir: "${params.outdir}/sample")
         .set { d_family_csv }
-        
+
     SAMPLE_CALC.out.j_family_csv
         .collectFile(name: 'j_family.csv', sort: true,
-                     storeDir: "${params.output}/sample")
+                     storeDir: "${params.outdir}/sample")
         .set { j_family_csv }
 
+    /////// =================== PLOT SAMPLE ===================  ///////
+
+    SAMPLE_PLOT (
+        file(params.samplesheet),
+        file(params.sample_stats_template),
+        sample_stats_csv,
+        v_family_csv
+        )
 
     TCRDIST3_MATRIX(
         sample_map,
@@ -88,19 +94,10 @@ workflow SAMPLE {
         global_y_max_value
     )
 
-    /////// =================== PLOT SAMPLE ===================  ///////
-
-    SAMPLE_PLOT (
-        file(params.samplesheet),
-        file(params.sample_stats_template),
-        sample_stats_csv,
-        v_family_csv
-        )
-    
     OLGA ( sample_map )
-    
+
     CONVERGENCE ( sample_map )
-    
+
     // emit:
     // sample_stats_csv
     // v_family_csv

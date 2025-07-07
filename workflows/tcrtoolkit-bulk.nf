@@ -5,12 +5,11 @@
 */
 
 // Validate pipeline parameters
-def checkPathParamList = [ params.samplesheet, params.data_dir ]
+def checkPathParamList = [ params.samplesheet]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
 if (params.samplesheet) { samplesheet = file(params.samplesheet) } else { exit 1, 'Samplesheet not specified. Please, provide a --samplesheet=/path/to/samplesheet.csv !' }
-if (params.data_dir) { data_dir = params.data_dir } else { exit 1, 'Data directory not specified. Please, provide a --data_dir=/path/to/data_dir !' }
 if (params.outdir) { outdir = params.outdir } else { exit 1, 'Output directory not specified. Please, provide a --outdir=/path/to/outdir !' }
 
 /*
@@ -23,10 +22,11 @@ if (params.outdir) { outdir = params.outdir } else { exit 1, 'Output directory n
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
-include { SAMPLE      } from '../subworkflows/local/sample'
-include { COMPARE     } from '../subworkflows/local/compare'
-
+include { INPUT_CHECK }         from '../subworkflows/local/input_check'
+include { AIRR_CONVERT }        from '../subworkflows/local/airr_convert'
+include { RESOLVE_SAMPLESHEET } from '../subworkflows/local/resolve_samplesheet'
+include { SAMPLE }              from '../subworkflows/local/sample'
+include { COMPARE }             from '../subworkflows/local/compare'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,21 +40,43 @@ workflow TCRTOOLKIT_BULK {
     println("Running TCRTOOLKIT_BULK workflow...")
 
     // Split the workflow_level parameter into a list of levels
-    def levels = params.workflow_level.tokenize(',')
+    def levels = params.workflow_level.toLowerCase().tokenize(',')
+    def input_format = params.input_format.toLowerCase()
+
+    // Validate
+    if (levels.contains('convert') && !['adaptive', 'cellranger'].contains(input_format)) {
+        println("\u001B[33m[WARN]\u001B[0m To run Convert workflow, please specify a valid convertible --input_format (adaptive or cellranger)")
+        if (!levels.contains('sample') && !levels.contains('compare')) {
+            return
+        }
+    }
 
     // Checking input tables
     INPUT_CHECK( file(params.samplesheet) )
 
+    if (input_format in ['adaptive', 'cellranger']) {
+        AIRR_CONVERT( INPUT_CHECK.out.sample_map,
+            input_format
+            )
+            .sample_map_converted
+            .set { sample_map_final }
+    } else {
+        INPUT_CHECK.out.sample_map
+            .set { sample_map_final }
+    }
+
+    RESOLVE_SAMPLESHEET( INPUT_CHECK.out.samplesheet_utf8,
+        sample_map_final )
+
     // Running sample level analysis
-    if (levels.contains('sample') || levels.contains('complete')) {
-        SAMPLE( INPUT_CHECK.out.sample_map )
+    if (levels.contains('sample')) {
+        SAMPLE( sample_map_final )
     }
 
     // Running comparison analysis
-    if (levels.contains('compare') || levels.contains('complete')) {
-        COMPARE( INPUT_CHECK.out.samplesheet_utf8,
-                 params.project_name,
-                 file(params.data_dir) )
+    if (levels.contains('compare')) {
+        COMPARE( RESOLVE_SAMPLESHEET.out.samplesheet_resolved,
+            RESOLVE_SAMPLESHEET.out.all_sample_files)
     }
 }
 

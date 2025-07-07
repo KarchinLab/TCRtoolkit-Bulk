@@ -12,7 +12,7 @@ process SAMPLESHEET_CHECK {
 
     script: 
     """
-    samplesheet.py -s $samplesheet -d ${params.data_dir}
+    samplesheet.py -s $samplesheet
     """
 
     stub:

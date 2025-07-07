@@ -10,25 +10,28 @@ ds.logger.info("List of starting params")
 ds.logger.info(ds.params)
 
 ds.logger.info('checking ds.files')
-ds.logger.info(ds.files.head())
-ds.logger.info(ds.files.columns)
+files = ds.files
+ds.logger.info(files.head())
+ds.logger.info(files.columns)
 
 # 2. Add samplesheet parameter and set equal to ds.samplesheet
 ds.logger.info("Checking samplesheet parameter")
 ds.logger.info(ds.samplesheet)
 samplesheet = ds.samplesheet
+
+# Replace local links with s3
+samplesheet['file'] = files['file']
+
 samplesheet.to_csv('samplesheet.csv', index=None)
 ds.add_param("samplesheet", "samplesheet.csv")
 
 
 # 3. Set workflow_level value based on form input
 ds.logger.info("Setting workflow_level")
-if ds.params['sample_lvl'] == ds.params['compare_lvl'] == True:
-    workflow_level = ['complete']
-else:
-    workflow_lvls = ['sample', 'compare']
-    chosen_lvls = [ds.params['sample_lvl'], ds.params['compare_lvl']]
-    workflow_level = [i for i, j in zip(workflow_lvls, chosen_lvls) if j]
+
+levels = ['convert', 'sample', 'compare']
+flags = [ds.params['convert_lvl'], ds.params['sample_lvl'], ds.params['compare_lvl']]
+workflow_level = [lvl for lvl, flag in zip(levels, flags) if flag]
 
 ds.add_param('workflow_level', ','.join(workflow_level))
 
