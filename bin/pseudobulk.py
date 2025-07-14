@@ -101,7 +101,7 @@ def pseudobulk(input_df, basename, airr_schema):
 
     # Rename and reorder columns
     bulk_df.rename(columns={"cell_id": "cell_count"}, inplace=True)
-    # bulk_df["sequence_id"] = bulk_df["sequence"]  # Use sequence as ID
+    bulk_df["sequence_id"] = [f"{basename}|sequence{i+1}" for i in range(len(bulk_df))]
     total_duplicate = bulk_df['duplicate_count'].sum()
     bulk_df['duplicate_frequency_percent'] = bulk_df['duplicate_count'] / total_duplicate * 100
 
