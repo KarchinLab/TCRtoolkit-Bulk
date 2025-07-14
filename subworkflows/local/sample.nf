@@ -10,6 +10,7 @@ include { SAMPLE_PLOT } from '../../modules/local/sample/sample_plot'
 include { TCRDIST3_MATRIX; TCRDIST3_HISTOGRAM_CALC; TCRDIST3_HISTOGRAM_PLOT} from '../../modules/local/sample/tcrdist3'
 include { OLGA } from '../../modules/local/sample/olga'
 include { CONVERGENCE } from '../../modules/local/sample/convergence'
+include { TCRPHENO } from '../../modules/local/sample/tcrpheno'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,6 +98,8 @@ workflow SAMPLE {
     OLGA ( sample_map )
 
     CONVERGENCE ( sample_map )
+
+    TCRPHENO ( sample_map )
 
     // emit:
     // sample_stats_csv
