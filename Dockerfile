@@ -27,7 +27,7 @@ RUN mkdir -p /opt/quarto/1.6.42 \
     && rm quarto.tar.gz 
 
 # Install R package not available via conda
-RUN Rscript -e "remotes::install_github('HetzDra/turboGliph')"
+RUN Rscript -e "lapply(c('HetzDra/turboGliph', 'kalaga27/tcrpheno'), remotes::install_github)"
 
 # Add quarto to the PATH
 ENV PATH="/opt/quarto/1.6.42/bin:${PATH}"
