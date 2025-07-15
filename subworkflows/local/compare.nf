@@ -8,7 +8,7 @@
 include { COMPARE_CALC  } from '../../modules/local/compare/compare_calc'
 include { COMPARE_PLOT  } from '../../modules/local/compare/compare_plot'
 include { COMPARE_CONCATENATE  } from '../../modules/local/compare/compare_concatenate'
-include { TCRSHARING_CALC } from '../../modules/local/compare/tcrsharing'
+include { TCRSHARING_CALC; TCRSHARING_HISTOGRAM; TCRSHARING_SCATTERPLOT } from '../../modules/local/compare/tcrsharing'
 include { GLIPH2_TURBOGLIPH; GLIPH2_PLOT } from '../../modules/local/compare/gliph2'
 
 /*
@@ -47,6 +47,14 @@ workflow COMPARE {
 
     TCRSHARING_CALC(
         COMPARE_CONCATENATE.out.concat_cdr3
+    )
+
+    TCRSHARING_HISTOGRAM(
+        TCRSHARING_CALC.out.shared_cdr3
+    )
+
+    TCRSHARING_SCATTERPLOT(
+        TCRSHARING_CALC.out.shared_cdr3
     )
 
     // emit:
