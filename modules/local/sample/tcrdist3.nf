@@ -39,7 +39,7 @@ process TCRDIST3_HISTOGRAM_CALC {
     """
     python - <<EOF
     import os
-    
+
     import h5py
     import numpy as np
     import matplotlib.pyplot as plt
@@ -131,7 +131,7 @@ process TCRDIST3_HISTOGRAM_PLOT {
     plt.figure(figsize=(8, 5))
     plt.bar(bin_centers, counts, width=np.diff(bin_edges), edgecolor='black')
 
-    # X-ticks logic (copied from earlier)
+    # X-ticks logic
     min_val = bin_edges[0]
     max_val = bin_edges[-1] - 1
     xtick_range = max_val - min_val
@@ -145,9 +145,6 @@ process TCRDIST3_HISTOGRAM_PLOT {
 
     plt.xlabel("Pairwise Distance")
     plt.ylabel("Frequency (log scale)")
-
-
-
     plt.yscale("log")
     plt.ylim(0.9, max(10, ${y_max}))  # avoid zero on log scale
 
@@ -155,8 +152,7 @@ process TCRDIST3_HISTOGRAM_PLOT {
     yticks = np.logspace(0, int(np.ceil(np.log10(${y_max}))), base=10)
     plt.yticks(yticks)
     plt.gca().yaxis.set_major_locator(ticker.LogLocator(base=10.0, subs=(1.0,), numticks=10))
-    # plt.gca().yaxis.set_minor_locator(ticker.NullLocator()) 
-    
+
     plt.title("Distribution of Beta Chain Pairwise Distances - ${sample_meta.sample}")
     plt.savefig("${sample_meta.sample}_pairwise_distance_distribution_standardized.png", dpi=300, bbox_inches="tight")
     plt.close()
