@@ -177,6 +177,7 @@ def adaptive_to_airr(input_df, basename, imgt_lookup, airr_schema):
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
 
+    df["sequence_id"] = [f"{basename}|sequence{i+1}" for i in range(len(df))]
     df[["sequence", "junction", "junction_aa", "sequence_aa", "frame"]] = df.apply(derive_junction_fields, axis=1)
     df[["v_cigar", "d_cigar", "j_cigar"]] = df.apply(derive_cigars, axis=1)
 

@@ -8,8 +8,9 @@
 include { SAMPLE_CALC } from '../../modules/local/sample/sample_calc'
 include { SAMPLE_PLOT } from '../../modules/local/sample/sample_plot'
 include { TCRDIST3_MATRIX; TCRDIST3_HISTOGRAM_CALC; TCRDIST3_HISTOGRAM_PLOT} from '../../modules/local/sample/tcrdist3'
-include { OLGA } from '../../modules/local/sample/olga'
+include { OLGA_PGEN_CALC; OLGA_HISTOGRAM_CALC; OLGA_HISTOGRAM_PLOT; OLGA_WRITE_MAX } from '../../modules/local/sample/olga'
 include { CONVERGENCE } from '../../modules/local/sample/convergence'
+include { TCRPHENO } from '../../modules/local/sample/tcrpheno'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,9 +95,42 @@ workflow SAMPLE {
         global_y_max_value
     )
 
-    OLGA ( sample_map )
+    OLGA_PGEN_CALC ( sample_map )
+
+    OLGA_PGEN_CALC.out.olga_xmin
+        .map { it.text.trim().toDouble() }
+        .collect()
+        .map { values -> values.min() }
+        .set { olga_x_min_value }
+    olga_x_min_value.view { "Olga x min matrix value: $it" }
+
+    OLGA_PGEN_CALC.out.olga_xmax
+        .map { it.text.trim().toDouble() }
+        .collect()
+        .map { values -> values.max() }
+        .set { olga_x_max_value }
+    olga_x_max_value.view { "Olga x max matrix value: $it" }
+
+    OLGA_HISTOGRAM_CALC ( OLGA_PGEN_CALC.out.olga_pgen, olga_x_min_value, olga_x_max_value )
+
+    OLGA_HISTOGRAM_CALC.out.olga_ymax
+        .map { it.text.trim().toDouble() }
+        .collect()
+        .map { values -> values.max() }
+        .set { olga_y_max_value }
+    olga_y_max_value.view { "Olga y max matrix value: $it" }
+
+    OLGA_HISTOGRAM_PLOT( OLGA_HISTOGRAM_CALC.out.olga_histogram, olga_y_max_value )
+
+    OLGA_WRITE_MAX(
+        olga_x_min_value,
+        olga_x_max_value,
+        olga_y_max_value
+    )
 
     CONVERGENCE ( sample_map )
+
+    TCRPHENO ( sample_map )
 
     // emit:
     // sample_stats_csv

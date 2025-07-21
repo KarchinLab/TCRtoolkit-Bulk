@@ -8,14 +8,12 @@ process TCRSHARING_CALC {
     output:
     path "cdr3_sharing_pgen.tsv", emit: "shared_cdr3"
     path "sample_mapping.tsv", emit: "sample_mapping"
-    path "sharing_histogram.png"
-    path "sharing_pgen_scatterplot.png"
 
     script:
     """
     python - <<EOF
-    import pandas as pd
     import numpy as np
+    import pandas as pd
     import matplotlib.pyplot as plt
 
     # Load data
@@ -23,9 +21,13 @@ process TCRSHARING_CALC {
 
     # Step 1: Map samples to integers
     sample_mapping = {sample: i + 1 for i, sample in enumerate(df['sample'].unique())}
-    df['sample_id'] = df['sample'].map(sample_mapping)
+    sample_map_df = pd.DataFrame.from_dict(sample_mapping, orient='index', columns=['sample_id']).reset_index()
+    sample_map_df.columns = ['patient', 'sample_id']
+    sample_map_df.to_csv("sample_mapping.tsv", sep="\t", index=False)
 
     # Step 2: Group by CDR3b and aggregate sample_ids
+    df['sample_id'] = df['sample'].map(sample_mapping)
+
     grouped = (
         df.groupby('CDR3b')['sample_id']
         .apply(lambda x: sorted(set(x)))  # remove duplicates if any
@@ -42,15 +44,48 @@ process TCRSHARING_CALC {
 
     # Step 5: Export both outputs
     final_df.to_csv("cdr3_sharing.tsv", sep="\t", index=False)
+    EOF
 
-    # Also export the sample mapping
-    sample_map_df = pd.DataFrame.from_dict(sample_mapping, orient='index', columns=['sample_id']).reset_index()
-    sample_map_df.columns = ['patient', 'sample_id']
-    sample_map_df.to_csv("sample_mapping.tsv", sep="\t", index=False)
 
+    olga-compute_pgen --humanTRB -i cdr3_sharing.tsv -o pgen_sharing.tsv
+
+
+    python - <<EOF
+    import pandas as pd
+    
+    # Load TSVs for shared cdr3s and corresponding pgen values
+    left_df = pd.read_csv('pgen_sharing.tsv', sep='\t', header=None, usecols=[0, 1], names=['CDR3b', 'pgen'])
+    right_df = pd.read_csv('cdr3_sharing.tsv', sep='\t')
+
+    # Drop rows where pgen == 0 and merge
+    left_df = left_df[left_df['pgen'] != 0]
+    merged_df = pd.merge(left_df, right_df, on='CDR3b', how='left')
+    merged_df.to_csv('cdr3_sharing_pgen.tsv', sep='\t', index=False)
+    EOF
+    """
+}
+
+process TCRSHARING_HISTOGRAM {
+    label 'process_low'
+    container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
+
+    input:
+    path shared_cdr3
+
+    output:
+    path "sharing_histogram.png"
+
+    script:
+    """
+    python - <<EOF
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    
+    merged_df = pd.read_csv('$shared_cdr3', sep='\t')
 
     # Plot histogram
-    sharing = final_df['total_samples'].values
+    sharing = merged_df['total_samples'].values
 
     # Create integer bin edges from 0 to max(data)
     bins = np.arange(min(sharing), max(sharing) + 2)  # +2 to include the last value as a bin edge
@@ -68,23 +103,28 @@ process TCRSHARING_CALC {
     plt.savefig("sharing_histogram.png", dpi=300, bbox_inches="tight")
     plt.close()
     EOF
+    """
+}
 
-    olga-compute_pgen --humanTRB -i cdr3_sharing.tsv -o pgen_sharing.tsv
+process TCRSHARING_SCATTERPLOT {
+    label 'process_low'
+    container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
+    input:
+    path shared_cdr3
+
+    output:
+    path "sharing_pgen_scatterplot.png"
+
+    script:
+    """
     python - <<EOF
-    import pandas as pd
     import numpy as np
+    import pandas as pd
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
 
-    # Load TSVs for shared cdr3s and corresponding pgen values
-    left_df = pd.read_csv('pgen_sharing.tsv', sep='\t', header=None, usecols=[0, 1], names=['CDR3b', 'pgen'])
-    right_df = pd.read_csv('cdr3_sharing.tsv', sep='\t')
-
-    # Drop rows where pgen == 0 and merge
-    left_df = left_df[left_df['pgen'] != 0]
-    merged_df = pd.merge(left_df, right_df, on='CDR3b', how='left')
-    merged_df.to_csv('cdr3_sharing_pgen.tsv', sep='\t', index=False)
+    merged_df = pd.read_csv('$shared_cdr3', sep='\t')
 
     # Create scatter plot with log-transform pgen
     merged_df["log10_pgen"] = np.log10(merged_df["pgen"])
