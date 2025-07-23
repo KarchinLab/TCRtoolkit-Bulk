@@ -1,7 +1,7 @@
 process GIANA_CALC {
     label 'process_medium'
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
-    
+
     input:
     path concat_cdr3
     val threshold
@@ -11,12 +11,12 @@ process GIANA_CALC {
     output:
     path "VgeneScores.txt"
     path "giana_RotationEncodingBL62.txt"
-    path "giana_RotationEncodingBL62_EncodingMatrix.txt"
+    path "giana_EncodingMatrix.txt"
     path "giana.log"
 
     script:   
     """
-    GIANA --file ${concat_cdr3} \
+    GIANA --file "${concat_cdr3}" \
         --output . \
         --outfile giana_RotationEncodingBL62.txt \
         --EncodingMatrix true \
@@ -53,6 +53,6 @@ process GIANA_CALC {
                 outfile.write(line)
     EOF
 
-    mv giana_RotationEncodingBL62.txt_EncodingMatrix.txt giana_RotationEncodingBL62_EncodingMatrix.txt
+    mv giana_RotationEncodingBL62.txt_EncodingMatrix.txt giana_EncodingMatrix.txt
     """
 }
