@@ -10,6 +10,7 @@ include { COMPARE_PLOT  } from '../../modules/local/compare/compare_plot'
 include { COMPARE_CONCATENATE  } from '../../modules/local/compare/compare_concatenate'
 include { TCRSHARING_CALC; TCRSHARING_HISTOGRAM; TCRSHARING_SCATTERPLOT } from '../../modules/local/compare/tcrsharing'
 include { GLIPH2_TURBOGLIPH; GLIPH2_PLOT } from '../../modules/local/compare/gliph2'
+include { GIANA_CALC    } from '../../modules/local/compare/giana'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,6 +41,13 @@ workflow COMPARE {
 
     COMPARE_CONCATENATE( samplesheet_resolved,
         all_sample_files )
+
+    GIANA_CALC(
+        COMPARE_CONCATENATE.out.concat_cdr3,
+        params.threshold,
+        params.threshold_score,
+        params.threshold_vgene
+    )
 
     GLIPH2_TURBOGLIPH(
         COMPARE_CONCATENATE.out.concat_cdr3
