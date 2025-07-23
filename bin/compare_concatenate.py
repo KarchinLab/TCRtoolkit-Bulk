@@ -40,7 +40,7 @@ def main():
         df['sample'] = row['sample']
         
         # Select relevant columns
-        df = df[['junction_aa', 'v_call', 'j_call', 'patient', 'duplicate_count', 'sample']]
+        df = df[['junction_aa', 'v_call', 'j_call', 'duplicate_count', 'patient', 'sample']]
         dfs.append(df)
 
 
