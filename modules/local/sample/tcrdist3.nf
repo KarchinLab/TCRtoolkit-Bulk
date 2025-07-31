@@ -1,6 +1,24 @@
 process TCRDIST3_MATRIX {
     tag "${sample_meta.sample}"
+    label 'process_medium'
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
+
+    memory {
+        def sz = count_table.size()
+        def mb = 1024 * 1024
+        if (sz > 26 * mb)
+            return 512.GB * task.attempt
+        else if (sz > 20 * mb)
+            return 256.GB * task.attempt
+        else if (sz > 10 * mb)
+            return 128.GB * task.attempt
+        else if (sz > 4 * mb)
+            return 64.GB * task.attempt
+        else if (sz > 2 * mb)
+            return 16.GB * task.attempt
+        else
+            return 4.GB * task.attempt
+    }
 
     input:
     tuple val(sample_meta), path(count_table)
