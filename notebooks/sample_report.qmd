@@ -1,0 +1,2113 @@
+---
+title: "Sample - Notebook"
+format:
+  html: 
+    theme: flatly
+    toc: true
+    toc_depth: 3
+    code-fold: true # show
+    #embed-resources: true
+    number-sections: true
+    smooth-scroll: true
+    grid:
+      body-width: 1000px
+      margin-width: 300px
+jupyter: python3 # "Python3.9.6"
+# /usr/bin/python3 -m venv ~/venvs/quarto-env
+# source ~/venvs/quarto-env/bin/activate
+# pip install --upgrade pip
+# pip install logomaker scipy seaborn pandas matplotlib plotly jupyter ipykernel pyyaml
+# python -m ipykernel install --user --name python3.9.6 --display-name "Python3.9.6"
+
+# source ~/venvs/quarto-env/bin/activate
+# quarto preview /Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/notebooks/sample_report.qmd --no-browser --no-watch-inputs
+---
+
+Thank you for using TCRtoolkit! This report is generated from sample data and metadata you provided. The report is divided into three sections: 
+
+@sec-report-setup : Code to setup the report. This section includes the parameters you used to run the pipeline, loading necessary packages, data, etc.
+
+@sec-sample-level-stats : Typical sample level T cell repertoire statistics. Each plot has a description about the statistic shown and formulas used to calculate the metric.
+
+@sec-convergence : TCR convergence
+
+@sec-gene-family-usage : TCR V gene family usage. The x-axis shows the timepoint collected for each individual, and the y-axis shows the proportion of TCRs that use each V gene family.
+
+@sec-tcrdist : Tcrdist. Grouping of T-cell receptors (TCRs) based on CDR sequence similarity.
+
+@sec-olga : Olga. Likelihood that specific T-cell receptor (TCR) sequences are produced during the random V(D)J recombination process
+
+@sec-TCRPheno : Phenotype prediction: Innate, CD8, Treg, Mem
+
+# Report Setup {#sec-report-setup}
+
+```{python, echo=false}
+#| tags: [parameters]
+#| echo: false
+
+workflow_cmd='nextflow run main.nf --data_dir test_data/minimal-example     --samplesheet test_data/minimal-example/samplesheet.csv     --output out-minimal-dev     --max_memory 10GB --max_cpus 4'
+project_name='TCRtoolkit-Bulk'
+project_dir='/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/'
+# sample_table='/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/sample_table.csv'
+sample_stats_csv='/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/sample/sample_stats.csv'
+v_family_csv='/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/sample/v_family.csv'
+```
+
+```{python}
+# 1. Load Packages
+from IPython.display import Image
+import os
+import datetime
+import sys
+import pandas as pd
+import math
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.colors import LinearSegmentedColormap
+import plotly.express as px
+import plotly.graph_objects as go
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+
+# 2. Print pipeline parameters
+
+print('Project Name:          ' + project_name)
+print('Workflow command:      ' + workflow_cmd)
+print('Pipeline Directory:    ' + project_dir)
+print('Date and time:         ' + str(datetime.datetime.now()))
+
+# 4. Loading data
+
+## reading combined repertoire statistics
+df = pd.read_csv(sample_stats_csv, sep=',', header=None, 
+                 names=['sample_id', 'patient_id', 'timepoint', 'origin',
+                        'num_clones', 'num_TCRs', 'simpson_index', 'simpson_index_corrected', 'clonality',
+                        'num_in', 'num_out', 'num_stop', 'pct_prod', 'pct_out', 'pct_stop', 'pct_nonprod',
+                        'cdr3_avg_len', 'num_convergent', 'ratio_convergent'])
+# print('-- Imported sample_stats_csv as `df`...')
+
+## reading sample metadata
+# meta = pd.read_csv(sample_table, sep=',', header=None, index_col=None,
+#                    names=['sample_id', 'file', 'patient_id', 'timepoint', 'origin'])
+# print('-- Imported sample_table as `meta`...')
+
+## reading V gene family usage 
+v_family = pd.read_csv(v_family_csv, sep=',', header=None, index_col=None,
+                       names=['patient_id', 'timepoint', 'origin', 'TCRBV01', 
+                              'TCRBV02', 'TCRBV03', 'TCRBV04', 'TCRBV05', 'TCRBV06',
+                              'TCRBV07', 'TCRBV08', 'TCRBV09', 'TCRBV10', 'TCRBV11',
+                              'TCRBV12', 'TCRBV13', 'TCRBV14', 'TCRBV15', 'TCRBV16',
+                              'TCRBV17', 'TCRBV18', 'TCRBV19', 'TCRBV20', 'TCRBV21',
+                              'TCRBV22', 'TCRBV23', 'TCRBV24', 'TCRBV25', 'TCRBV26',
+                              'TCRBV27', 'TCRBV28', 'TCRBV29', 'TCRBV30'])
+v_family = v_family.sort_values(by=['patient_id', 'timepoint'])
+
+```
+
+# Sample level statistics {#sec-sample-level-stats}
+
+Below are plots showing basic T cell repertoire statistics. Each plot has a description about the statistic shown and formulas used to calculate the metric when applicable. Specific biological interpretation of each plot is left to the user.
+
+## Number of clones
+
+The number of unique TCR clones in a sample, known as **repertoire richness**, is a fundamental measure of clonal diversity. **This metric provides critical insight into the state of the immune system**. A repertoire with **high richness** is considered **polyclonal** and represents a **healthy, vigilant immune system** with a broad capacity to recognize a vast array of potential threats. In contrast, **low richness indicates an oligoclonal repertoire**, where a few T-cell clones have massively expanded and dominate the immune landscape. This is a **hallmark of a highly focused and active immune response**, such as during an acute infection or a targeted anti-tumor response. Tracking changes in richness over time is therefore crucial for understanding immune dynamics, as a drop in diversity often signals the onset of a response, while a subsequent increase can indicate a return to immune homeostasis.
+
+```{python}
+timepts = sorted(df.timepoint.unique().tolist())
+fig = px.box(df,
+             x='timepoint',
+             y='num_clones',
+             color='origin',
+             points='all',
+             hover_data=['sample_id'],
+             category_orders={'timepoint': timepts},
+             title="Number of TCR Clones of samples by Timepoint"
+            )
+
+# Loop through all the traces generated by px.box
+for trace in fig.data:
+    # Check if the trace is a box plot
+    if isinstance(trace, go.Box):
+        # Set pointpos to 0 to align points vertically in the center
+        trace.pointpos = 0
+
+
+# --- Add connecting lines for each patient ---
+patient_ids = df['patient_id'].unique()
+for patient in patient_ids:
+    patient_df = df[(df['patient_id'] == patient) & (df['timepoint'].isin(timepts))]
+    if len(patient_df) == 2:
+        # Sort by timepoint to ensure correct order for lines
+        patient_df = patient_df.sort_values('timepoint', ascending=True)
+        
+        fig.add_trace(go.Scatter(
+            x=patient_df['timepoint'],
+            y=patient_df['num_clones'],
+            mode='lines',
+            line=dict(color='grey', width=1),
+            showlegend=False,
+            hovertemplate=f"<b>Patient: {patient}</b><br>Clones: %{{y}}<extra></extra>"
+        ))
+
+# --- Update layout ---
+fig.update_layout(
+    xaxis_title="Timepoint",
+    yaxis_title="Number of Clones",
+    legend_title="Origin"
+)
+fig.show()
+```
+
+
+**Figure 1. Number of clones across timepoints.** A clone is defined as a T cell with a unique CDR3 amino acid sequence. The number of clones is shown on the y-axis and 'origin_timepoint' is shown on the x-axis. 
+
+The boxplot allows you to visualize and compare the distribution of repertoire richness across your entire patient cohort at each timepoint. By looking at the boxplot, you assess the overall trend. For instance, if the **median** line of the box for the **"Post" timepoint** is **lower than the "Pre" timepoint, it suggests that the patient group**, **mounted a focused immune response that reduced overall TCR diversity**. The plot also reveals the variability in response across patients and can highlight outliers—individuals whose repertoire diversity changed much more or less dramatically than their peers. 
+
+## Clonality  
+
+TCR clonality is a measure of the extent to which a T-cell repertoire is dominated by a few highly expanded T-cell clones. It is essentially the opposite of TCR diversity.
+
+What TCR Clonality Tells You About Your Sample
+Clonality provides a snapshot of the immune system's current focus. Think of your entire T-cell repertoire as an army of soldiers, where each clone is a unique type of soldier trained for a specific target.
+
+Low Clonality (High Diversity): This is like an army with soldiers of every possible type, all standing by in relatively equal numbers.  
+
+High Clonality (Low Diversity): This is like an army where a huge portion of the soldiers are of one specific type, mobilized to fight a single, major battle.  
+
+```{python}
+
+fig = px.box(df,
+             x='timepoint',
+             y='clonality',
+             color='origin',
+             points='all',
+             hover_data=['sample_id'],
+             category_orders={'timepoint': timepts},
+             title="TCR Clonality of samples by Timepoint"
+            )
+
+# Loop through all the traces generated by px.box
+for trace in fig.data:
+    # Check if the trace is a box plot
+    if isinstance(trace, go.Box):
+        # Set pointpos to 0 to align points vertically in the center
+        trace.pointpos = 0
+
+
+# --- Add connecting lines for each patient ---
+patient_ids = df['patient_id'].unique()
+for patient in patient_ids:
+    patient_df = df[(df['patient_id'] == patient) & (df['timepoint'].isin(timepts))]
+    if len(patient_df) == 2:
+        # Sort by timepoint to ensure correct order for lines
+        patient_df = patient_df.sort_values('timepoint', ascending=True)
+        
+        fig.add_trace(go.Scatter(
+            x=patient_df['timepoint'],
+            y=patient_df['clonality'],
+            mode='lines',
+            line=dict(color='grey', width=1),
+            showlegend=False,
+            hovertemplate=f"<b>Patient: {patient}</b><br>Clones: %{{y}}<extra></extra>"
+        ))
+
+# --- Update layout ---
+fig.update_layout(
+    xaxis_title="Timepoint",
+    yaxis_title="Clonality",
+    legend_title="Origin"
+)
+
+fig.show()
+```
+
+**Figure 2. The clonality of samples across timepoints.** Clonality is a measure of T cell clonal expansion and reflects the degree to which the sample is dominated by 1 or more T cell clones. Clonality is calculated via: $$Clonality = \frac {1-H} {\log_{2} N} \quad\text{,}\quad H = -\sum\limits_{i=1}^N p_i \log_{2}{p_i}$$ where $H$ is the Shannon entropy of a given sample, $N$ is the number of unique TCRs in the sample, and $p_i$ is the frequency of the $i$ th unique TCR in the sample. 
+
+
+## Simpson Index
+
+**The Simpson Index (D) tells you about dominance**. The Simpson Index answers the question: "If I draw one TCR, then put it back, and draw a second one, what is the probability that I will draw the same clone twice?"
+
+A high probability (value close to 1) means the repertoire is dominated by one or two clones. This signifies **low diversity**.
+
+A low probability (value close to 0) means the clones are more evenly distributed, making it unlikely you'll pick the same color twice. **This signifies high diversity**.
+
+
+
+```{python}
+
+fig = px.box(df,
+             x='timepoint',
+             y='simpson_index_corrected',
+             color='origin',
+             points='all',
+             hover_data=['sample_id'],
+             category_orders={'timepoint': timepts},
+             title="Simpson Index of samples by Timepoint"
+            )
+
+# Loop through all the traces generated by px.box
+for trace in fig.data:
+    # Check if the trace is a box plot
+    if isinstance(trace, go.Box):
+        # Set pointpos to 0 to align points vertically in the center
+        trace.pointpos = 0
+
+
+# --- Add connecting lines for each patient ---
+patient_ids = df['patient_id'].unique()
+for patient in patient_ids:
+    patient_df = df[(df['patient_id'] == patient) & (df['timepoint'].isin(timepts))]
+    if len(patient_df) == 2:
+        # Sort by timepoint to ensure correct order for lines
+        patient_df = patient_df.sort_values('timepoint', ascending=True)
+        
+        fig.add_trace(go.Scatter(
+            x=patient_df['timepoint'],
+            y=patient_df['simpson_index_corrected'],
+            mode='lines',
+            line=dict(color='grey', width=1),
+            showlegend=False,
+            hovertemplate=f"<b>Patient: {patient}</b><br>Clones: %{{y}}<extra></extra>"
+        ))
+
+# --- Update layout ---
+fig.update_layout(
+    xaxis_title="Timepoint",
+    yaxis_title="Simpson Index",
+    legend_title="Origin"
+)
+
+fig.show()
+```
+
+**Figure 3. Corrected Simpson Index.** The Simpson Index is a measure of diversity that takes into account the number of clones and the relative abundance of each clone in a sample. The corrected Simpson Index, $D$, is calculated as: 
+
+$$D = \sum\limits_{i=1}^N \frac {p_i(p_i - 1)} {T(T - 1)} \quad\text{,}\quad T = \sum\limits_{i=1}^N p_i$$
+
+Where $N$ is the number of unique TCRs in the sample, $p_i$ is the frequency of the $i$ th unique TCR in the sample, and $T$ is the total number of T Cells counted in the sample. 
+
+
+### How to Use It to Learn About Your Data 🔍
+
+- **Quantify Clonal Dominance:** The Simpson Index tells you how oligoclonal (dominated by a few clones, low diversity) or polyclonal (many clones with even abundance, high diversity) your sample is. 
+
+- **Compare Between Groups:** You can use the index to compare diversity between different experimental groups. For example, you could test if a group of patients receiving a certain treatment shows a lower T-cell diversity (indicating a targeted immune response) compared to a placebo group.
+
+- **Track Changes Over Time:** By calculating the index for samples taken at different timepoints, you can track how the structure of a community changes. For instance, in a patient responding to immunotherapy, you might expect to see T-cell diversity decrease as specific anti-tumor clones expand. If the patient recovers and the response contracts, you might see diversity increase again as the repertoire returns to a more balanced, homeostatic state.
+
+## Percent of productive TCRs
+
+The percent of productive TCRs is one of the first metrics you should check to validate your data's reliability before proceeding to any biological analysis.
+
+As a Quality Filter: You should set a QC threshold (e.g., >75% productive reads). Samples that fail to meet this threshold should be flagged for review or potentially excluded from the analysis. Drawing conclusions about T-cell diversity or clonality from a sample with low productivity is unreliable, as the data is likely noisy and not a true representation of the functional T-cell repertoire.
+
+To Troubleshoot Experiments: If you find that an entire batch of samples has a low productive percentage, it points to a systematic issue in your experimental protocol, most commonly an ineffective gDNA removal step or problems with RNA integrity.
+
+To Ensure Confidence in Results: By confirming that your samples have a high percentage of productive TCRs, you can be confident that the clonotypes you identify and analyze represent real, functional T-cells that are actively participating in the immune response.
+
+```{python}
+fig = px.box(df,
+             x='timepoint',
+             y='pct_prod',
+             color='origin',
+             points='all',
+             hover_data=['sample_id'],
+             category_orders={'timepoint': timepts},
+             title="Number Productive TCRs"
+            )
+
+# Loop through all the traces generated by px.box
+for trace in fig.data:
+    # Check if the trace is a box plot
+    if isinstance(trace, go.Box):
+        # Set pointpos to 0 to align points vertically in the center
+        trace.pointpos = 0
+
+
+# --- Add connecting lines for each patient ---
+patient_ids = df['patient_id'].unique()
+for patient in patient_ids:
+    patient_df = df[(df['patient_id'] == patient) & (df['timepoint'].isin(timepts))]
+    if len(patient_df) == 2:
+        # Sort by timepoint to ensure correct order for lines
+        patient_df = patient_df.sort_values('timepoint', ascending=True)
+        
+        fig.add_trace(go.Scatter(
+            x=patient_df['timepoint'],
+            y=patient_df['pct_prod'],
+            mode='lines',
+            line=dict(color='grey', width=1),
+            showlegend=False,
+            hovertemplate=f"<b>Patient: {patient}</b><br>Clones: %{{y}}<extra></extra>"
+        ))
+
+# --- Update layout ---
+fig.update_layout(
+    xaxis_title="Timepoint",
+    yaxis_title="Productive TCRs (%)",
+    legend_title="Origin"
+)
+
+fig.show()
+```
+
+**Figure 4. Percent of productive TCRs.** A productive TCR is a DNA/RNA sequence that can be translated into a protein sequence, i.e. it does not contain a premature stop codon or an out of frame rearrangement. The percent of productive TCRs is calculated as: 
+
+$$ Percent \text{ } productive \text{ } TCRs = \frac P N $$
+
+where $P$ is the number of productive TCRs and $N$ is the total number of TCRs in a given sample. 
+
+**<u>Potential Biological Interpretations</u>** 🤔  
+If a sample has passed all other QC checks but still shows a consistently lower or higher percentage of productive TCRs compared to others, it might reflect certain biological states.
+
+1. Thymic Selection and Output
+The process of T-cell development in the thymus, known as thymic selection, is designed to eliminate T-cells that fail to make a productive TCR rearrangement. A subtle shift in the productive percentage could theoretically reflect changes in this process. For instance, a condition that alters thymic function or leads to an increased export of immature T-cells might result in a slightly different ratio of productive to non-productive transcripts detected in the blood.
+
+2. Gene Dysregulation in Disease
+Certain disease states, particularly T-cell malignancies like lymphomas, involve significant dysregulation of normal cellular processes. It's hypothesized that a malignant T-cell clone might aberrantly transcribe its non-productively rearranged allele at a higher rate than a normal T-cell. If this malignant clone dominates the sample, it could lead to an overall decrease in the productive percentage. Furthermore, defects in cellular machinery like the nonsense-mediated decay (NMD) pathway, which normally degrades transcripts with premature stop codons, could allow more non-productive sequences to persist and be detected.
+
+
+
+## Average CDR3 Length
+
+```{python}
+fig = px.box(df,
+             x='timepoint',
+             y='cdr3_avg_len',
+             color='origin',
+             points='all',
+             hover_data=['sample_id'],
+             category_orders={'timepoint': timepts},
+             title="CDR3 length (aminoacid sequence)"
+            )
+
+# Loop through all the traces generated by px.box
+for trace in fig.data:
+    # Check if the trace is a box plot
+    if isinstance(trace, go.Box):
+        # Set pointpos to 0 to align points vertically in the center
+        trace.pointpos = 0
+
+
+# --- Add connecting lines for each patient ---
+patient_ids = df['patient_id'].unique()
+for patient in patient_ids:
+    patient_df = df[(df['patient_id'] == patient) & (df['timepoint'].isin(timepts))]
+    if len(patient_df) == 2:
+        # Sort by timepoint to ensure correct order for lines
+        patient_df = patient_df.sort_values('timepoint', ascending=True)
+        
+        fig.add_trace(go.Scatter(
+            x=patient_df['timepoint'],
+            y=patient_df['cdr3_avg_len'],
+            mode='lines',
+            line=dict(color='grey', width=1),
+            showlegend=False,
+            hovertemplate=f"<b>Patient: {patient}</b><br>Clones: %{{y}}<extra></extra>"
+        ))
+
+# --- Update layout ---
+fig.update_layout(
+    xaxis_title="Timepoint",
+    yaxis_title="Average CDR3 length",
+    legend_title="Origin"
+)
+
+fig.show()
+```
+
+**Figure 5. Average CDR3 Length** The average length of the CDR3 region of the TCR. The CDR3 region is the most variable region of the TCR and is the region that determines antigen specificity.
+
+# TCR Convergence {#sec-convergence}
+
+```{python}
+fig = px.box(df,
+             x='timepoint',
+             y='ratio_convergent',
+             color='origin',
+             points='all',
+             hover_data=['sample_id'],
+             category_orders={'timepoint': timepts},
+             title="Number of Convergent TCRs "
+            )
+
+# Loop through all the traces generated by px.box
+for trace in fig.data:
+    # Check if the trace is a box plot
+    if isinstance(trace, go.Box):
+        # Set pointpos to 0 to align points vertically in the center
+        trace.pointpos = 0
+
+
+# --- Add connecting lines for each patient ---
+patient_ids = df['patient_id'].unique()
+for patient in patient_ids:
+    patient_df = df[(df['patient_id'] == patient) & (df['timepoint'].isin(timepts))]
+    if len(patient_df) == 2:
+        # Sort by timepoint to ensure correct order for lines
+        patient_df = patient_df.sort_values('timepoint', ascending=True)
+        
+        fig.add_trace(go.Scatter(
+            x=patient_df['timepoint'],
+            y=patient_df['ratio_convergent'],
+            mode='lines',
+            line=dict(color='grey', width=1),
+            showlegend=False,
+            hovertemplate=f"<b>Patient: {patient}</b><br>Clones: %{{y}}<extra></extra>"
+        ))
+
+# --- Update layout ---
+fig.update_layout(
+    xaxis_title="Timepoint",
+    yaxis_title="Convergent TCRs ratio",
+    legend_title="Origin"
+)
+
+fig.show()
+```
+
+**Figure 6. TCR Convergence** The ratio of convergent TCRs to total TCRs. A convergent TCR is a TCR that is generated via 2 or more unique nucleotide sequences via codon degeneracy. 
+
+
+## Clonal Expansion  
+
+This stacked bar plot provides a snapshot of your T-cell repertoire's structure, revealing the balance between dominant, expanded clones and the diverse pool of rare clones. By categorizing each TCR based on its frequency, we can infer the state of the immune system.
+
+Each bar is a complete TCR repertoire from one sample, broken down into three key functional categories:  
+- **Highly Expanded (or Hyperexpanded):** Clones constituting > 1% of the total productive TCR reads.  
+- **Expanded (or Large):** Clones with a frequency between 0.1% and 1%.  
+- **Non-expanded (or Small/Rare):** Clones with a frequency < 0.1%.  
+Clonal frquency ia calculated as:  
+$$f_i = \frac{\text{Read count for clone } i}{\text{Total reads for all productive TCR clones}} \times 100\%$$
+
+```{python}
+
+import pandas as pd
+import numpy as np
+import os
+import plotly.graph_objects as go
+
+def create_expansion_stacked_barplot(df):
+    """
+    Generates a stacked bar plot grouped by patient, showing the percentage 
+    of clones in different expansion categories for each sample.
+
+    Categories are based on clone frequency within the sample:
+    - Highly Expanded: > 1%
+    - Expanded: 0.1% to 1%
+    - Non-expanded: < 0.1%
+
+    Args:
+        df (pd.DataFrame): DataFrame with TCR data, requiring 'sample' and 'counts' columns.
+    """
+    # --- 1. Ensure 'counts' column is numeric ---
+    try:
+        df['counts'] = pd.to_numeric(df['counts'])
+    except ValueError:
+        print("Error: 'counts' column could not be converted to a numeric type.")
+        return
+
+    # --- 2. Process data for each sample ---
+    unique_samples = sorted(df['sample'].unique())
+    processed_data = []
+
+    for sample_name in unique_samples:
+        sample_df = df[df['sample'] == sample_name].copy()
+        
+        # --- NEW: Extract Patient ID and Timepoint from sample name ---
+        parts = sample_name.split('_')
+        if len(parts) == 2:
+            patient_id, timepoint = parts
+        else:
+            # Handle cases where sample name format might be different
+            patient_id, timepoint = sample_name, ''
+            
+        total_reads_in_sample = sample_df['counts'].sum()
+        if total_reads_in_sample == 0:
+            continue
+            
+        sample_df['frequency'] = (sample_df['counts'] / total_reads_in_sample) * 100
+        
+        highly_expanded = sample_df[sample_df['frequency'] > 1]
+        expanded = sample_df[(sample_df['frequency'] >= 0.1) & (sample_df['frequency'] <= 1)]
+        non_expanded = sample_df[sample_df['frequency'] < 0.1]
+        
+        total_clones_in_sample = len(sample_df)
+        if total_clones_in_sample == 0:
+            continue
+
+        processed_data.append({
+            'Sample': sample_name,
+            'PatientID': patient_id, # Add new field
+            'Timepoint': timepoint, # Add new field
+            'Highly Expanded': (len(highly_expanded) / total_clones_in_sample) * 100,
+            'Expanded': (len(expanded) / total_clones_in_sample) * 100,
+            'Non-expanded': (len(non_expanded) / total_clones_in_sample) * 100
+        })
+
+    if not processed_data:
+        print("No data could be processed for plotting.")
+        return
+
+    plot_df = pd.DataFrame(processed_data)
+
+    # --- 3. UPDATED Sorting Logic ---
+    # Sort by Patient ID first, then by Timepoint ('Base' before 'Post')
+    plot_df = plot_df.sort_values(
+        by=['PatientID', 'Timepoint'],
+        ascending=[True, True]
+    )
+
+    # --- 4. Create the Stacked Bar Plot ---
+    fig = go.Figure()
+    categories = ['Highly Expanded', 'Expanded', 'Non-expanded']
+    colors = ['#d62728', '#ff7f0e', '#1f77b4'] # Red, Orange, Blue
+
+    for category, color in zip(categories, colors):
+        fig.add_trace(go.Bar(
+            x=plot_df['Sample'],
+            y=plot_df[category],
+            name=category,
+            marker_color=color,
+            text=[f'{y:.1f}%' for y in plot_df[category]],
+            textposition='inside'
+        ))
+        
+    # --- NEW: Add vertical lines to separate patient groups ---
+    # Find the indices where the PatientID changes
+    patient_changes = plot_df['PatientID'].ne(plot_df['PatientID'].shift()).to_numpy()
+    change_indices = np.where(patient_changes)[0]
+    
+    for idx in change_indices[1:]: # Skip the first change at index 0
+        # Add a line at the midpoint between bars
+        fig.add_vline(x=idx - 0.5, line_width=1, line_dash="dash", line_color="grey")
+
+    # --- 5. Update Layout ---
+    fig.update_layout(
+        barmode='stack',
+        title='Clonal Expansion Status by Sample (Grouped by Patient)',
+        xaxis=dict(
+            title_text='Sample',
+            tickangle=-90,
+            tickfont=dict(size=10)
+        ),
+        yaxis=dict(
+            title_text='Percentage of Clones (%)',
+            range=[0, 100]
+        ),
+        legend_title_text='Expansion Category',
+        font=dict(size=12)
+    )
+    
+    fig.update_traces(textfont_size=12, textangle=0)
+    fig.show()
+
+# --- Generate Plot ---
+file_path = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/compare/concatenated_cdr3.txt'
+df_ = pd.read_csv(file_path, sep='\t')
+create_expansion_stacked_barplot(df_)
+
+# import pandas as pd
+# import numpy as np
+# import os
+# import plotly.graph_objects as go
+
+# def create_expansion_stacked_barplot(df):
+#     """
+#     Generates a sorted stacked bar plot showing the percentage of clones in
+#     different expansion categories for each sample.
+
+#     Categories are based on clone frequency within the sample:
+#     - Highly Expanded: > 1%
+#     - Expanded: 0.1% to 1%
+#     - Non-expanded: < 0.1%
+
+#     Args:
+#         df (pd.DataFrame): DataFrame with TCR data, requiring 'sample' and 'counts' columns.
+#     """
+#     # --- 1. Ensure 'counts' column is numeric ---
+#     try:
+#         df['counts'] = pd.to_numeric(df['counts'])
+#     except ValueError:
+#         print("Error: 'counts' column could not be converted to a numeric type.")
+#         return
+
+#     # --- 2. Process data for each sample ---
+#     unique_samples = sorted(df['sample'].unique())
+#     processed_data = []
+
+#     for sample_name in unique_samples:
+#         sample_df = df[df['sample'] == sample_name].copy()
+#         total_reads_in_sample = sample_df['counts'].sum()
+        
+#         if total_reads_in_sample == 0:
+#             print(f"Skipping {sample_name}: No reads found.")
+#             continue
+            
+#         sample_df['frequency'] = (sample_df['counts'] / total_reads_in_sample) * 100
+        
+#         highly_expanded = sample_df[sample_df['frequency'] > 1]
+#         expanded = sample_df[(sample_df['frequency'] >= 0.1) & (sample_df['frequency'] <= 1)]
+#         non_expanded = sample_df[sample_df['frequency'] < 0.1]
+        
+#         total_clones_in_sample = len(sample_df)
+#         if total_clones_in_sample == 0:
+#             continue
+
+#         processed_data.append({
+#             'Sample': sample_name,
+#             'Highly Expanded': (len(highly_expanded) / total_clones_in_sample) * 100,
+#             'Expanded': (len(expanded) / total_clones_in_sample) * 100,
+#             'Non-expanded': (len(non_expanded) / total_clones_in_sample) * 100
+#         })
+
+#     if not processed_data:
+#         print("No data could be processed for plotting.")
+#         return
+
+#     plot_df = pd.DataFrame(processed_data)
+
+#     # --- 3. Sort the DataFrame for plotting ---
+#     # Primary sort: 'Non-expanded' descending (higher values first)
+#     # Secondary sort: 'Highly Expanded' ascending (lower values first)
+#     plot_df = plot_df.sort_values(
+#         by=['Non-expanded', 'Highly Expanded'],
+#         ascending=[False, True]
+#     )
+
+#     # --- 4. Create the Stacked Bar Plot ---
+#     fig = go.Figure()
+#     categories = ['Highly Expanded', 'Expanded', 'Non-expanded']
+#     colors = ['#d62728', '#ff7f0e', '#1f77b4'] # Red, Orange, Blue
+
+#     for category, color in zip(categories, colors):
+#         fig.add_trace(go.Bar(
+#             x=plot_df['Sample'],
+#             y=plot_df[category],
+#             name=category,
+#             marker_color=color,
+#             text=[f'{y:.1f}%' for y in plot_df[category]],
+#             textposition='inside'
+#         ))
+
+#     # --- 5. Update Layout with new sorting and label styles ---
+#     fig.update_layout(
+#         barmode='stack',
+#         title='Clonal Expansion Status by Sample',
+#         xaxis=dict(
+#             title_text='Sample',
+#             tickangle=-90, # Angle labels for readability
+#             tickfont=dict(size=10) # Reduce font size
+#         ),
+#         yaxis=dict(
+#             title_text='Percentage of Clones (%)',
+#             range=[0, 100]
+#         ),
+#         legend_title_text='Expansion Category',
+#         font=dict(size=12)
+#     )
+    
+#     fig.update_traces(textfont_size=12, textangle=0)
+#     fig.show()
+
+# # --- Generate Plot ---
+# file_path = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/compare/concatenated_cdr3.txt'
+# df_ = pd.read_csv(file_path, sep='\t')
+# create_expansion_stacked_barplot(df_)
+
+```
+**Figure 7. Sample's expansion composition** Stacked barplot showing the percentage (y-axis) of "Non-Expanded", "Expanded" and "Highly Expanded" clones per each sample (x-axis). Samples derived from the same patient are clubbed together.   
+
+**<u>Understanding Each Category</u>**
+
+**Highly Expanded Clones (> 1%)**  
+
+- What they are: These are the dominant "fighters" of the immune system. A single clone making up more than 1% of the entire repertoire is exceptionally frequent and almost certainly represents a T-cell that has undergone massive proliferation in response to a specific antigen.
+
+- Biological Insight: A large "Highly Expanded" portion indicates a highly focused, or oligoclonal, immune response. This is characteristic of:
+    - An acute viral infection (e.g., flu, COVID-19).
+    - A strong response against cancer antigens (especially with immunotherapy).
+    - Certain autoimmune diseases where a specific self-antigen is targeted.
+
+**Expanded Clones (0.1% - 1%)**  
+
+- What they are: These are moderately expanded clones. They are participating in an immune response but are not as dominant as the hyperexpanded clones. They can represent secondary responders or clones from a previous infection that have settled into a memory state.
+
+- Biological Insight: This category provides a picture of the active, but not overwhelming, immune activity. A significant portion of the repertoire in this category suggests a broad, active response without being dominated by a single specificity.
+
+**Non-expanded Clones (< 0.1%)**  
+
+- What they are: This category represents the vast diversity of the TCR repertoire. It includes the massive pool of naïve T-cells waiting for an antigen and the wide variety of memory cells from past immune encounters.
+
+- Biological Insight: A large "Non-expanded" portion indicates a highly diverse, or polyclonal, repertoire. This is the hallmark of a healthy, resting immune system with the potential to respond to a vast array of future threats. It is your immunological "reservoir."
+
+
+**<u>Comparing timepoint samples within Patients</u>**   
+The real power of this plot comes from comparing samples, such as before (Pre) and after (Post) a treatment or vaccination.
+
+Look for a shift towards "Highly Expanded": If the blue "Highly Expanded" bar grows significantly from the "Pre" to the "Post" sample, it strongly suggests a successful immune response was mounted. The specific T-cells recognizing the target antigen (e.g., from a vaccine or tumor) have proliferated dramatically.
+
+Look for a return to diversity: If a sample starts with a large "Highly Expanded" portion (e.g., during an infection) and then shifts towards a larger "Non-expanded" portion at a later timepoint, it can signify the contraction phase of an immune response. The dominant clones recede after clearing the antigen, and the repertoire returns to a more diverse, homeostatic state.
+
+By analyzing the changing proportions of these categories, you can build a powerful narrative about how the immune system is responding to disease, vaccination, or therapy. 
+
+## Clonal Expansion
+
+This table is useful because it reveals the identities of the dominant clones driving the immune response in each sample. By listing the most highly expanded T-cell receptors, **you can pinpoint the specific "effector" cells that have proliferated most, likely in response to a key antigen from a tumor or pathogen.** Having their precise sequences allows you to track these key clones over time, compare them across different patients to find shared public clones, and provides the necessary information for downstream functional studies to determine their antigen specificity.
+
+```{python}
+import pandas as pd
+import numpy as np
+import os
+import plotly.graph_objects as go
+
+def create_top_clones_tables_from_single_file(df, n_clones=3):
+    """
+    Loads a single TCR data file and creates an interactive table with a dropdown
+    menu to display the top 3 most expanded clones for each patient-timepoint sample.
+    Suitable for embedding in static HTML from Quarto.
+    """
+
+    # --- 1. Load and prepare the data ---
+    # Create a unique sample identifier from patient and timepoint
+    unique_samples = sorted(df['sample'].unique())
+
+    # --- 2. Create the Plotly Figure ---
+    fig = go.Figure()
+
+    for sample_name in unique_samples:
+        try:
+            # a. Filter the DataFrame for the current sample
+            sample_df = df[df['sample'] == sample_name].copy()
+            
+            # Use 'counts' as the clone size/frequency
+            sample_df = sample_df[sample_df['counts'] > 0]
+
+            if sample_df.empty:
+                print(f"Skipping {sample_name}: No data with counts > 0.")
+                continue
+            
+            # b. Get top N clones and select relevant columns
+            top_n_clones = sample_df.nlargest(n_clones, 'counts')
+            
+            display_df = top_n_clones[['CDR3b', 'TRBV', 'TRBJ', 'counts']].copy()
+            display_df.columns = ['CDR3b', 'TRBV', 'TRBJ', 'Counts']
+            
+            # c. Add a Table trace for the current sample
+            fig.add_trace(
+                go.Table(
+                    header=dict(values=list(display_df.columns),
+                                fill_color='paleturquoise',
+                                align='left'),
+                    cells=dict(values=[display_df[col] for col in display_df.columns],
+                               fill_color='lavender',
+                               align='left'),
+                    name=sample_name,
+                    visible=(sample_name == unique_samples[0]) # First one is visible
+                )
+            )
+
+        except Exception as e:
+            print(f"Could not process sample {sample_name}. Error: {e}")
+
+    # --- 4. Create the dropdown menu ---
+    buttons = []
+    # Use fig.data to ensure we only create buttons for plotted samples
+    for trace in fig.data:
+        name = trace.name
+        visibility_mask = [tr.name == name for tr in fig.data]
+        button = dict(
+            label=name,
+            method="restyle",
+            args=[{"visible": visibility_mask},
+                  {"title.text": f"Top {n_clones} Expanded Clones for {name}"}]
+        )
+        buttons.append(button)
+
+    # --- 5. Update the figure layout ---
+    initial_title = f"Top {n_clones} Expanded Clones"
+    if fig.data:
+        initial_title = f"Top {n_clones} Expanded Clones"
+
+    fig.update_layout(
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=buttons,
+                direction="down",
+                pad={"r": 10, "t": 10},
+                showactive=True,
+                x=0.95,
+                xanchor="left",
+                y=1.20,
+                yanchor="top"
+            )
+        ],
+        title_text=initial_title,
+        font=dict(size=12)
+    )
+    
+    fig.show()
+
+# --- Generate Plot ---
+file_path = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/compare/concatenated_cdr3.txt'
+df_ = pd.read_csv(file_path, sep='\t')
+create_top_clones_tables_from_single_file(df_, n_clones=15)
+
+```
+**Table 1. Top 15 most expanded TCR clones** TCRs are rearranged decreasingly based on thei "Counts" column.
+
+
+**Visualizing the clone size distribution provides an intuitive snapshot of the repertoire's entire structure.** This plot reveals the balance between the vast number of rare clones (the "tail") and the few highly expanded clones (the "head") that often drive an immune response. A distribution heavily skewed to the left with a short tail signifies a diverse, polyclonal repertoire with many different rare T-cells. In contrast, a distribution with a long, heavy tail extending to the right is a clear visual indicator of an oligoclonal repertoire, dominated by large, expanded clones. This allows for a quick, qualitative assessment of a sample's clonality and diversity, complementing more quantitative summary metrics.
+**By comparing all distributions, you can visually assess the overall impact of your experimental condition across the entire patient cohort.**  
+
+```{python}
+import pandas as pd
+import numpy as np
+import os
+import plotly.graph_objects as go
+# You may need to install scipy: pip install scipy
+from scipy.stats import gaussian_kde
+
+def create_clone_density_plots(df):
+    """
+    Generates an interactive figure with a dropdown menu to display
+    a smoothed density plot (KDE) of the clone count distribution for each sample.
+
+    Args:
+        df (pd.DataFrame): DataFrame with TCR data, requiring 'sample' and 'counts' columns.
+    """
+    # --- 1. Ensure 'counts' column is numeric ---
+    try:
+        df['counts'] = pd.to_numeric(df['counts'])
+    except ValueError:
+        print("Error: 'counts' column could not be converted to a numeric type.")
+        return
+
+    # --- 2. Create the Plotly Figure ---
+    unique_samples = sorted(df['sample'].unique())
+    fig = go.Figure()
+
+    # Loop through each sample to create a density trace
+    for sample_name in unique_samples:
+        try:
+            # Filter for the current sample and for counts > 0
+            sample_df = df[(df['sample'] == sample_name) & (df['counts'] > 0)].copy()
+
+            # A density plot requires at least 2 data points
+            if len(sample_df) < 2:
+                print(f"Skipping {sample_name}: Not enough data points for a density plot.")
+                continue
+
+            # --- Calculate Density (KDE) on log-transformed data ---
+            # Log transform is crucial for visualizing highly skewed count data
+            log_counts = np.log10(sample_df['counts'])
+            
+            # Use scipy to calculate the kernel density estimate
+            kde = gaussian_kde(log_counts)
+            
+            # Create a range of x-values for a smooth plot
+            x_range = np.linspace(log_counts.min(), log_counts.max(), 500)
+            
+            # --- Add a Scatter trace to draw the density curve ---
+            fig.add_trace(
+                go.Scatter(
+                    x=x_range,
+                    y=kde(x_range),
+                    mode='lines',
+                    fill='tozeroy', # Fills the area under the curve
+                    name=sample_name,
+                    marker_color='darkcyan',
+                    visible=False
+                )
+            )
+        except Exception as e:
+            print(f"Could not process sample {sample_name}. Error: {e}")
+
+    # --- 3. Finalize and Show Figure ---
+    if not fig.data:
+        print("No data was plotted. Exiting.")
+        return
+
+    fig.data[0].visible = True
+
+    buttons = []
+    for trace in fig.data:
+        visibility_mask = [tr.name == trace.name for tr in fig.data]
+        button = dict(
+            label=trace.name,
+            method="restyle",
+            args=[
+                {"visible": visibility_mask},
+                {"title.text": f"Clone Count Density for {trace.name}"}
+            ]
+        )
+        buttons.append(button)
+
+    initial_title = f"Clone Count Density"
+    fig.update_layout(
+        updatemenus=[dict(active=0, buttons=buttons, direction="down", pad={"r": 10, "t": 10}, showactive=True, x=0.95, xanchor="left", y=1.20, yanchor="top")],
+        title_text=initial_title,
+        font=dict(size=12),
+        # Update axes titles for the density plot
+        xaxis_title="log10(Clone Count)",
+        yaxis_title="Density"
+    )
+
+    fig.show()
+
+# --- Generate Plot ---
+file_path = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/compare/concatenated_cdr3.txt'
+df_ = pd.read_csv(file_path, sep='\t')
+create_clone_density_plots(df_)
+
+```
+
+**Figure 8. Clone Density** Density plot showing the number of sequencing counts (x-axis) and the number of TCRs (y-axis) having them. A value around 0 in the x-axis, represets clones that are non-expanded.
+
+
+# Gene Family Usage {#sec-gene-family-usage}
+
+## V gene family usage
+
+**V (Variable), D (Diversity), and J (Joining) genes are the genetic building blocks a T-cell uses to construct a unique T-cell receptor (TCR) through a "mix-and-match" process called V(D)J recombination**. To create the immense diversity needed to recognize countless potential threats, each developing T-cell randomly selects and permanently stitches together one V, one D (for the beta chain only), and one J gene segment from a large genetic library. This process creates a single, unique TCR gene for that cell, with the most critical, hypervariable region known as the CDR3 being formed at the junction where these segments meet, which is the part that directly binds to antigens. 🧬
+
+The V gene family usage of the TCRs in each sample is shown in the plots below. The x-axis shows the timepoint collected for each individual, and the y-axis shows the proportion of TCRs that use each V gene family.
+The V gene usage proportion, $V_k$, is calculated via:
+
+$$
+V_k = \frac {N_{k}} {T} \quad\text{,}\quad T = \sum\limits_{i=1}^N p_i
+$$
+
+where $N_{k}$ is the number of TCRs that use the $k$ th V gene, and T is the total number of TCRs in the sample.
+
+```{python}
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+
+def prepare_data(v_family):
+    """Transforms the raw data frame into a long format with proportions."""
+    v_family_long = pd.melt(v_family, id_vars=['patient_id', 'timepoint', 'origin'],
+                            value_vars=v_family.columns[3:], var_name='v_gene', value_name='count')
+    v_family_long['proportion'] = v_family_long.groupby(['patient_id', 'timepoint'])['count'] \
+                                     .transform(lambda x: x / x.sum() if x.sum() > 0 else 0)
+    total_counts = v_family_long.groupby(['patient_id', 'timepoint'])['count'].sum().reset_index() \
+                       .rename(columns={'count': 'total_v_genes'})
+    v_family_long = pd.merge(v_family_long, total_counts, on=['patient_id', 'timepoint'])
+    return v_family_long
+
+def create_vj_navigation_plot(df, patient_list):
+    """Creates an interactive Plotly figure with a dropdown menu to navigate patient plots."""
+    if df.empty or not patient_list:
+        return go.Figure().update_layout(title_text="No data to display.")
+
+    fig = go.Figure()
+    all_v_genes = sorted(df['v_gene'].unique())
+    colors = px.colors.qualitative.Plotly
+    color_map = {gene: colors[i % len(colors)] for i, gene in enumerate(all_v_genes)}
+
+    # Loop to add traces
+    for i, patient in enumerate(patient_list):
+        patient_df = df[df['patient_id'] == patient]
+        for v_gene in all_v_genes:
+            plot_df = patient_df[patient_df['v_gene'] == v_gene]
+            if plot_df.empty:
+                timepoints = patient_df['timepoint'].unique()
+                plot_df = pd.DataFrame({
+                    'timepoint': timepoints, 'proportion': [0] * len(timepoints),
+                    'total_v_genes': [patient_df[patient_df.timepoint == tp]['total_v_genes'].iloc[0] for tp in timepoints]
+                })
+
+            fig.add_trace(go.Bar(
+                x=plot_df['timepoint'], y=plot_df['proportion'], name=v_gene,
+                marker_color=color_map.get(v_gene), visible=(i == 0),
+                text=plot_df['total_v_genes'] if v_gene == all_v_genes[0] else None,
+                textposition='outside', hoverinfo='x+y+name',
+                legendgroup=v_gene,
+                showlegend=(i == 0)
+            ))
+            
+    # Button creation for dropdown (no changes here)
+    buttons = []
+    num_genes = len(all_v_genes)
+    for i, patient in enumerate(patient_list):
+        visibility = [False] * (len(patient_list) * num_genes)
+        visibility[i*num_genes : (i+1)*num_genes] = [True] * num_genes
+        button = dict(
+            method="restyle",
+            args=[{"visible": visibility}, {"title.text": f"Patient: {patient}"}],
+            label=patient
+        )
+        buttons.append(button)
+
+    fig.update_layout(
+        template="simple_white",
+        title_text=f"Patient: {patient_list[0]}",
+        xaxis_title="Timepoint",
+        yaxis_title="Proportion",
+        yaxis=dict(range=[0, 1.15]),
+        barmode="stack",
+        legend=dict(
+            orientation="v",    # Set to vertical
+            x=1.02,             # Position just to the right of the plot
+            xanchor="left",
+            y=0.5,              # Center vertically
+            yanchor="middle",
+            title="V-Gene"
+        ),
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=buttons,
+                direction="down",
+                pad={"r": 10, "t": 10},
+                showactive=True,
+                # --- POSITION HAS BEEN UPDATED HERE ---
+                x=1.0,           # Position to the far right
+                xanchor="right", # Anchor the menu's right side to the x coordinate
+                y=1.19,
+                yanchor="top"
+            )
+        ]
+    )
+    return fig
+
+def generate_sankey_data(patient_df, v_gene_color_map):
+    """
+    Prepares the node and link dictionaries for a hub-and-spoke Sankey plot.
+    This correctly shows proportions for all V-genes at both timepoints.
+    """
+    # 1. Prepare data for the specific patient
+    base_df = patient_df[patient_df['timepoint'] == 'base'].rename(columns={'proportion': 'prop_base'})
+    post_df = patient_df[patient_df['timepoint'] == 'post'].rename(columns={'proportion': 'prop_post'})
+    
+    flow_df = pd.merge(base_df[['v_gene', 'prop_base']], post_df[['v_gene', 'prop_post']], on='v_gene', how='outer').fillna(0)
+    # Keep any gene that exists at either timepoint
+    flow_df = flow_df[(flow_df['prop_base'] > 0) | (flow_df['prop_post'] > 0)]
+    all_genes = sorted(flow_df['v_gene'].unique())
+    
+    # 2. Define Nodes: Base, Post, and one for each V-gene
+    node_labels = ['Base', 'Post'] + all_genes
+    label_indices = {label: i for i, label in enumerate(node_labels)}
+    
+    # Use neutral colors for Base/Post hubs, and gene colors for V-genes
+    node_colors = ['#d3d3d3', '#d3d3d3'] + [v_gene_color_map.get(gene, '#888') for gene in all_genes]
+
+    # 3. Define Links: Two sets of flows (Base -> Genes) and (Genes -> Post)
+    source_indices = []
+    target_indices = []
+    link_values = []
+    
+    # Links from Base to each V-gene
+    for gene in all_genes:
+        source_indices.append(label_indices['Base'])
+        target_indices.append(label_indices[gene])
+        link_values.append(flow_df[flow_df['v_gene'] == gene]['prop_base'].iloc[0])
+
+    # Links from each V-gene to Post
+    for gene in all_genes:
+        source_indices.append(label_indices[gene])
+        target_indices.append(label_indices['Post'])
+        link_values.append(flow_df[flow_df['v_gene'] == gene]['prop_post'].iloc[0])
+
+    # Construct the final dictionaries
+    node_dict = dict(
+        pad=25,
+        thickness=20,
+        line=dict(color="black", width=0.5),
+        label=node_labels,
+        color=node_colors
+    )
+    link_dict = dict(
+        source=source_indices,
+        target=target_indices,
+        value=link_values
+    )
+    title_str = f"V-Gene Usage Flow for Patient: {patient_df['patient_id'].iloc[0]}<br><sup>Base vs. Post</sup>"
+    
+    return node_dict, link_dict, title_str
+
+# --- NAVIGATOR FUNCTION FOR ALLUVIAL PLOTS ---
+def create_alluvial_navigator(df_multi, patient_list):
+    """Creates an interactive figure with a dropdown to show alluvial plots for all patients."""
+    fig = go.Figure()
+
+    # Create a consistent color map inside the function
+    all_v_genes = sorted(df_multi['v_gene'].unique())
+    colors = px.colors.qualitative.Plotly
+    color_map = {gene: colors[i % len(colors)] for i, gene in enumerate(all_v_genes)}
+    
+    # Create the plot for the first patient to initialize the figure
+    first_patient_df = df_multi[df_multi['patient_id'] == patient_list[0]]
+    node_data, link_data, title = generate_sankey_data(first_patient_df, color_map)
+    fig.add_trace(go.Sankey(arrangement='snap', node=node_data, link=link_data))
+    
+    # Create buttons for the dropdown menu
+    buttons = []
+    for patient_id in patient_list:
+        patient_df = df_multi[df_multi['patient_id'] == patient_id]
+        node_data, link_data, title = generate_sankey_data(patient_df, color_map)
+        buttons.append(dict(
+            method='update',
+            label=patient_id,
+            args=[
+                {'node.label': node_data['label'], 'node.color': node_data['color'],
+                 'link.source': link_data['source'], 'link.target': link_data['target'],
+                 'link.value': link_data['value']},
+                {'title.text': title}
+            ]
+        ))
+        
+    fig.update_layout(
+        title_text=title,
+        font_size=12,
+        template="simple_white",
+        
+        # --- THIS BLOCK IS NOW IDENTICAL TO THE OTHER FUNCTION ---
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=buttons,
+                direction="down",
+                pad={"r": 10, "t": 10},
+                showactive=True,
+                x=1.0,           # Position to the far right
+                xanchor="right", # Anchor the menu's right side to the x coordinate
+                y=1.19,
+                yanchor="top"
+            )
+        ]
+    )
+    return fig
+```
+
+```{python}
+
+## calculate calulate proportions and add to v_family_long
+v_family_long = prepare_data(v_family)
+
+# Split into groups
+timepoint_counts = v_family_long.groupby('patient_id')['timepoint'].nunique()
+single_tp_patients = timepoint_counts[timepoint_counts == 1].index.tolist()
+multi_tp_patients = timepoint_counts[timepoint_counts > 1].index.tolist()
+
+df_single = v_family_long[v_family_long['patient_id'].isin(single_tp_patients)]
+df_multi = v_family_long[v_family_long['patient_id'].isin(multi_tp_patients)]
+```
+
+::: {.panel-tabset}
+## Single Timepoint
+```{python}
+#| echo: false
+# This chunk creates and displays the plot for the SINGLE timepoint tab.
+if not df_single.empty:
+  fig_single = create_vj_navigation_plot(df_single, single_tp_patients)
+  fig_single.show() # Display the figure
+else:
+  print("No patients with a single timepoint found.")
+```
+## Multiple Timepoints
+```{python}
+#| echo: false
+# This chunk creates and displays the plot for the MULTIPLE timepoints tab.
+
+# if not df_multi.empty:
+#     fig_multi = create_alluvial_navigator(df_multi, multi_tp_patients)
+#     fig_multi.show() # Display the figure
+# else:
+#     print("No patients with multiple timepoints found.")
+
+if not df_multi.empty:
+  fig_multi = create_vj_navigation_plot(df_multi, multi_tp_patients)
+  fig_multi.show() # Display the figure
+else:
+  print("No patients with multiple timepoints found.")
+
+```
+:::
+**Figure 9. V/J gene usage** Stacked barplot showing gene proportion (y-axis) at a given sample (x-axis). Samples cointaining multiple timepointes are shown side-by-side to facilitate comparisons.
+
+
+**Use this visualization to detect biased gene usage, which is a strong indicator of a significant, antigen-driven immune response.**
+When T-cells responding to a specific antigen proliferate, the V and J genes they are built from will naturally increase in proportion to all other genes in the repertoire. Comparing the usage profiles between two timepoints is the most powerful application of this chart.
+Look for significant changes: A bar that dramatically increases in height from one timepoint to the next indicates that an immune response involving T-cells from that specific gene family has been initiated or has expanded.  
+*Example scenario:*  
+If you observe that the usage of the TRBV7-9 gene increases from 4% in a pre-treatment sample to 35% in a post-treatment sample, this provides strong evidence of a treatment-induced response driven by T-cells that utilize the TRBV7-9 gene segment.
+
+# TCRdist3 {#sec-tcrdist}
+
+[TCRdist](https://elifesciences.org/articles/68605) is a **metric that quantifies the similarity between any two T-cell receptors (TCRs) by calculating a biochemically-aware distance based on their amino acid sequences**. Instead of just checking if two TCR sequences are identical, **TCRdist focuses on the key regions that bind to antigens: Complementarity-Determining Regions (CDRs).** It compares the amino acid sequences of the CDR1, CDR2 (obtained from the V gene), and especially the hypervariable CDR3 loops of two TCRs. The "distance" is calculated using a substitution matrix (like BLOSUM62) that scores how similar two different amino acids are in their biochemical properties. Swapping two functionally similar amino acids results in a small distance penalty, while swapping two very different ones results in a large penalty. The total distance is a weighted sum of these scores, with the CDR3 distance contributing the most.
+
+```{python}
+import pandas as pd
+import numpy as np
+import h5py
+import glob
+import os
+import plotly.graph_objects as go
+from scipy.sparse import csr_matrix
+
+def create_interactive_plotly_plot():
+    """
+    Finds all patient HDF5 distance files and creates a single interactive
+    Plotly figure with a dropdown menu to switch between patient distributions.
+    This is suitable for embedding in static HTML from Quarto.
+    """
+    # --- 1. Find all patient data files ---
+    base_path = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/tcrdist3/'
+    file_pattern = os.path.join(base_path, 'Patient*_Base_distance_matrix.hdf5')
+    patient_files = sorted(glob.glob(file_pattern)) # Sort for consistent order
+
+    if not patient_files:
+        print(f"Error: No patient files found at the specified path pattern: {file_pattern}")
+        return
+
+    # --- 2. Create the Plotly Figure ---
+    fig = go.Figure()
+    
+    # Initialize a variable to track the maximum distance across all patients
+    global_max_val = 0
+    plotted_patient_names = [] # To store names of patients actually plotted
+
+    # --- 3. Add a bar trace for each patient ---
+    for file_path in patient_files:
+        patient_name = os.path.basename(file_path).split('_')[0]
+        
+        try:
+            # a. Load sparse matrix components
+            with h5py.File(file_path, 'r') as f:
+                data = f['data'][:]
+                indices = f['indices'][:]
+                indptr = f['indptr'][:]
+
+            # b. Reconstruct the full, dense distance matrix
+            sparse_matrix = csr_matrix((data, indices, indptr))
+            dense_matrix = sparse_matrix.toarray()
+            # Ensure the matrix is symmetric
+            dense_matrix = np.maximum(dense_matrix, dense_matrix.T)
+
+            # c. Get unique pairwise distances from the upper triangle
+            # k=1 excludes the diagonal (distance to self)
+            n = dense_matrix.shape[0]
+            upper_triangle_indices = np.triu_indices(n, k=1)
+            unique_distances = dense_matrix[upper_triangle_indices]
+            
+            # d. Filter out -1 and 0 values
+            filtered_distances = unique_distances[(unique_distances != -1) & (unique_distances != 0)]
+            
+            if len(filtered_distances) > 0:
+                plotted_patient_names.append(patient_name)
+                # Calculate frequency of each unique distance
+                counts = pd.Series(filtered_distances).value_counts()
+                
+                # Update the global maximum distance value
+                current_max = counts.index.max()
+                if current_max > global_max_val:
+                    global_max_val = current_max
+
+                # Add a bar trace for the current patient
+                fig.add_trace(
+                    go.Bar(
+                        x=counts.index,
+                        y=counts.values,
+                        name=patient_name,
+                        # Make only the first patient visible initially
+                        visible=(len(fig.data) == 0) 
+                    )
+                )
+        except Exception as e:
+            print(f"Could not process file {file_path}. Error: {e}")
+
+    # --- 4. Create the dropdown menu ---
+    buttons = []
+    # Iterate over the traces that were actually added to the figure
+    for name in plotted_patient_names:
+        # Create a visibility mask. True for the current trace, False for others.
+        visibility_mask = [tr.name == name for tr in fig.data]
+        
+        button = dict(
+            label=name,
+            method="update",
+            args=[{"visible": visibility_mask},
+                  {"title": f"Distribution of Distances for {name}"}]
+        )
+        buttons.append(button)
+        
+    # --- 5. Update the figure layout ---
+    initial_title = "Distribution of Distances"
+    if plotted_patient_names:
+        initial_title = f"Distribution of Distances for {plotted_patient_names[0]}"
+
+    fig.update_layout(
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=buttons,
+                direction="down",
+                pad={"r": 10, "t": 10},
+                showactive=True,
+                x=1.0,
+                xanchor="left",
+                y=1.15,
+                yanchor="top"
+            )
+        ],
+        title_text=initial_title,
+        xaxis=dict(
+            title_text="Distance",
+            tickmode='linear',
+            tick0=0,
+            dtick=5,
+            range=[-0.5, global_max_val + 1]
+        ),
+        yaxis_title_text="Frequency",
+        font=dict(size=12)
+    )
+    
+    fig.show()
+
+create_interactive_plotly_plot()
+
+```
+**Figure 10. Sample Distances** Barplot showing biochemical distances between sample's TCRs
+
+**Why This Metric Is Helpful?** 🌐  
+The primary benefit of TCRdist is its ability to identify groups of T-cells that are likely to recognize the same antigen, even if their TCRs are not identical. This phenomenon is known as cross-reactivity.
+By calculating the distance between all TCRs in your sample, you can move beyond analyzing single, identical clones and instead identify functional "neighborhoods" of similar TCRs. This provides a much more comprehensive and biologically accurate picture of an immune response. It allows you to group related T-cells together to see the full breadth of the response to a specific antigen, rather than just the single most expanded clone.
+
+
+
+```{python}
+import pandas as pd
+import numpy as np
+import h5py
+import glob
+import os
+import plotly.graph_objects as go
+from scipy.sparse import csr_matrix
+import scipy.cluster.hierarchy as sch
+
+def create_interactive_heatmap_plot():
+    """
+    Finds all patient HDF5 files and creates an interactive clustered heatmap
+    with a dropdown menu to switch between patients. Suitable for Quarto HTML.
+    """
+    # --- 1. Find all patient data files ---
+    base_path = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/tcrdist3/'
+    file_pattern = os.path.join(base_path, 'Patient*_Base_distance_matrix.hdf5')
+    patient_files = sorted(glob.glob(file_pattern))
+
+    if not patient_files:
+        print(f"Error: No patient files found at: {file_pattern}")
+        return
+
+    # --- 2. Create the Plotly Figure ---
+    fig = go.Figure()
+    global_max_real_dist = 0 # To keep color scale consistent
+    plotted_patient_names = [] # To store names of patients actually plotted
+
+    # --- 3. Process each patient and add traces ---
+    for file_path in patient_files:
+        patient_name = os.path.basename(file_path).split('_')[0]
+        
+        try:
+            # a. Load data from HDF5
+            with h5py.File(file_path, 'r') as f:
+                data = f['data'][:]
+                indices = f['indices'][:]
+                indptr = f['indptr'][:]
+
+            # b. Reconstruct dense matrix
+            max_dist = 200 # A value larger than any real distance
+            data_ = data.copy()
+            
+            valid_data = data_[data_ != -1]
+            if len(valid_data) == 0:
+                print(f"Skipping {patient_name}: No valid distance data.")
+                continue
+            
+            max_real_dist = valid_data.max()
+            if max_real_dist > global_max_real_dist:
+                global_max_real_dist = max_real_dist
+            
+            data_[data_ == -1] = max_dist
+            sparse_matrix = csr_matrix((data_, indices, indptr))
+            dense_matrix = sparse_matrix.toarray()
+            dense_matrix = np.maximum(dense_matrix, dense_matrix.T)
+            
+            # c. Perform clustering
+            condensed_dist = sch.distance.pdist(dense_matrix)
+            linkage = sch.linkage(condensed_dist, method='ward')
+            dendrogram = sch.dendrogram(linkage, no_plot=True)
+            reordered_indices = dendrogram['leaves']
+            
+            # d. Reorder matrix and labels
+            reordered_matrix = dense_matrix[reordered_indices, :]
+            reordered_matrix = reordered_matrix[:, reordered_indices]
+            
+            # e. Replace 0s with NaN to make them appear white
+            reordered_matrix = reordered_matrix.astype(float) # Allow for NaN
+            reordered_matrix[reordered_matrix == 0] = np.nan
+            
+            num_tcrs = reordered_matrix.shape[0]
+            labels = [f'TCR_{i}' for i in range(num_tcrs)]
+            reordered_labels = [labels[i] for i in reordered_indices]
+            
+            plotted_patient_names.append(patient_name)
+            is_first_trace = (len(fig.data) == 0)
+
+            # f. Add heatmap trace with separation
+            fig.add_trace(
+                go.Heatmap(
+                    z=reordered_matrix,
+                    x=reordered_labels,
+                    y=reordered_labels,
+                    colorscale='spectral_r',
+                    name=patient_name,
+                    visible=is_first_trace,
+                    # Add gaps for grid lines
+                    xgap=1,
+                    ygap=1
+                )
+            )
+
+        except Exception as e:
+            print(f"Could not process file {file_path}. Error: {e}")
+
+    # --- 4. Create the dropdown menu ---
+    buttons = []
+    for i, name in enumerate(plotted_patient_names):
+        # Each button toggles one trace: the heatmap
+        visibility_mask = [False] * len(fig.data)
+        visibility_mask[i] = True     # Show heatmap
+        
+        button = dict(
+            label=name,
+            method="update",
+            args=[{"visible": visibility_mask},
+                  {"title": f"Clustered Distance Heatmap for {name}"}]
+        )
+        buttons.append(button)
+
+    # --- 5. Update the figure layout ---
+    initial_title = "Clustered Distance Heatmap"
+    if plotted_patient_names:
+        initial_title = f"Clustered Distance Heatmap for {plotted_patient_names[0]}"
+
+    fig.update_layout(
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=buttons,
+                direction="down",
+                pad={"r": 10, "t": 10},
+                showactive=True,
+                x=1.0,
+                xanchor="left",
+                y=1.1,
+                yanchor="top"
+            )
+        ],
+        title_text=initial_title,
+        xaxis=dict(title_text="TCRs", type='category'),
+        yaxis=dict(title_text="TCRs", type='category', autorange='reversed'),
+        font=dict(size=10),
+        # Set background color to white to make gaps look like grid lines
+        plot_bgcolor='white'
+    )
+    
+    # Update all heatmaps to have the same color scale
+    fig.update_traces(selector=dict(type='heatmap'), zmin=0, zmax=global_max_real_dist)
+    
+    fig.show()
+
+create_interactive_heatmap_plot()
+
+```
+
+**Figure 11. Distances** Heatmap showing distance between all sample's TCRs to help identify  related cones within a sample.  
+
+This heatmap visualizes the pairwise TCRdist for every T-cell receptor (TCR) within a sample, creating a comprehensive map of the repertoire's similarity landscape. Darker colors represent a smaller distance (higher similarity), and **the key features to look for are the square blocks** of dark color off the main diagonal. **These blocks identify "neighborhoods" or clusters of TCRs that are biochemically similar and likely recognize the same antige**n, providing a more complete picture of the immune response than analyzing single clones in isolation. It allows you to visually confirm the presence and composition of these functionally related TCR groups within your data.
+
+```{python}
+
+import os
+import pandas as pd
+import numpy as np
+import h5py
+import networkx as nx
+import itertools
+from scipy.sparse import csr_matrix
+import glob
+# --- NEW: Import Plotly and iGraph ---
+import plotly.graph_objects as go
+import igraph as ig
+
+# --- 1. Configuration ---
+# This threshold determines which TCRs are connected. A lower value means more stringent connections.
+DISTANCE_THRESHOLD = 24
+# --- IMPORTANT: Set this to the real base path of your TCRdist output directory ---
+BASE_PATH = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/tcrdist3/'
+
+# --- 2. Load and Aggregate Metadata from Real Files ---
+# print(f"Loading and aggregating metadata from: {BASE_PATH}")
+
+# Use glob to find all clone metadata files
+clone_file_pattern = os.path.join(BASE_PATH, '*_clone_df.csv')
+clone_files = sorted(glob.glob(clone_file_pattern))
+
+if not clone_files:
+    raise FileNotFoundError(f"Error: No clone metadata files ('*_clone_df.csv') found at the specified path pattern: {clone_file_pattern}")
+
+all_clones_list = []
+for f in clone_files:
+    df = pd.read_csv(f)
+    # Extract patient and timepoint from filename
+    basename = os.path.basename(f).replace('_clone_df.csv', '')
+    # Handle different filename formats (e.g., Patient01_Base or Patient01_Post_Tumor)
+    parts = basename.split('_')
+    patient = parts[0]
+    timepoint = parts[1]
+    df['patient'] = patient
+    df['timepoint'] = timepoint
+    all_clones_list.append(df)
+
+# Create a single master DataFrame with all TCRs
+all_clones_df = pd.concat(all_clones_list).reset_index(drop=True)
+
+
+# --- 3. Define Node Properties (Color, Size) ---
+# print("Defining node properties (color, size)...")
+# Group by unique TCR sequence to define properties for each node
+node_properties = all_clones_df.groupby('cdr3_b_aa').agg(
+    # Get the maximum count for sizing the node
+    max_count=('count', 'max'),
+    # Get a unique list of timepoints this TCR appears in
+    timepoints=('timepoint', lambda t: ','.join(sorted(list(set(t))))),
+    # --- NEW: Get a unique list of patients this TCR appears in ---
+    patients=('patient', lambda p: ','.join(sorted(list(set(p)))))
+).reset_index()
+
+# Define colors based on timepoint presence
+def get_color(timepoints):
+    if 'Base' in timepoints and 'Post' in timepoints:
+        return '#ff00ff'  # Magenta for shared across time
+    elif 'Base' in timepoints:
+        return '#0000ff'  # Blue for Base
+    elif 'Post' in timepoints:
+        return '#ff8c00'  # Orange for Post
+    return '#808080'      # Gray for others
+
+node_properties['color'] = node_properties['timepoints'].apply(get_color)
+# Use a logarithmic scale for node size to handle large differences in counts
+node_properties['size'] = node_properties['max_count'].apply(lambda x: max(6, np.log1p(x) * 2.5))
+
+
+# --- 4. Build the Network Graph using iGraph ---
+# print("Building the network graph with iGraph...")
+# Create a mapping from TCR sequence to an integer index for igraph
+tcr_to_idx = {tcr: i for i, tcr in enumerate(node_properties['cdr3_b_aa'])}
+idx_to_tcr = {i: tcr for tcr, i in tcr_to_idx.items()}
+
+# Create the igraph Graph object
+g = ig.Graph()
+g.add_vertices(len(node_properties))
+
+# Assign attributes to the vertices
+g.vs['name'] = node_properties['cdr3_b_aa']
+g.vs['size'] = node_properties['size']
+g.vs['color'] = node_properties['color']
+# --- NEW: Add patient info to the hover title ---
+g.vs['title'] = node_properties.apply(lambda row: f"TCR: {row['cdr3_b_aa']}<br>Max Count: {row['max_count']}<br>Timepoints: {row['timepoints']}<br>Patients: {row['patients']}", axis=1)
+
+# Add edges by processing each sample's distance matrix
+for f in clone_files:
+    basename = os.path.basename(f).replace('_clone_df.csv', '')
+    # print(f"  Processing edges for {basename}...")
+    
+    dist_file = os.path.join(BASE_PATH, f'{basename}_distance_matrix.hdf5')
+    if not os.path.exists(dist_file):
+        print(f"    Warning: Distance matrix not found for {basename}. Skipping.")
+        continue
+
+    with h5py.File(dist_file, 'r') as hf:
+        data = hf['data'][:]
+        indices = hf['indices'][:]
+        indptr = hf['indptr'][:]
+        sparse_matrix = csr_matrix((data, indices, indptr))
+        dist_matrix = sparse_matrix.toarray()
+    
+    sample_clones_df = pd.read_csv(f)
+    tcr_names = sample_clones_df['cdr3_b_aa'].tolist()
+    
+    for i, j in itertools.combinations(range(len(tcr_names)), 2):
+        distance = dist_matrix[i, j]
+        if 0 < distance <= DISTANCE_THRESHOLD:
+            tcr1, tcr2 = tcr_names[i], tcr_names[j]
+            # Get integer indices for the TCRs
+            idx1 = tcr_to_idx.get(tcr1)
+            idx2 = tcr_to_idx.get(tcr2)
+            if idx1 is not None and idx2 is not None:
+                g.add_edge(idx1, idx2, weight=int(distance))
+
+# --- KEY CHANGE: Filter out disconnected nodes ---
+# Select all vertices that have a degree of 0 (no connections) and delete them.
+disconnected_nodes = g.vs.select(_degree=0)
+g.delete_vertices(disconnected_nodes)
+# print(f"Removed {len(disconnected_nodes)} disconnected nodes. Visualizing connected components only.")
+
+
+# --- 5. Visualize and Display the Network with Plotly using iGraph layout ---
+# print("Generating interactive Plotly visualization...")
+
+# Use Fruchterman-Reingold layout to group connected components
+layout = g.layout_fruchterman_reingold(niter=500) # niter gives the simulation more time to settle
+
+# Create the edge trace
+edge_x, edge_y = [], []
+for edge in g.es:
+    source_idx, target_idx = edge.tuple
+    x0, y0 = layout[source_idx]
+    x1, y1 = layout[target_idx]
+    edge_x.extend([x0, x1, None])
+    edge_y.extend([y0, y1, None])
+
+edge_trace = go.Scatter(
+    x=edge_x, y=edge_y,
+    line=dict(width=0.5, color='#888'),
+    hoverinfo='none',
+    mode='lines')
+
+# Create the node trace
+node_x = [pos[0] for pos in layout]
+node_y = [pos[1] for pos in layout]
+node_trace = go.Scatter(
+    x=node_x, y=node_y,
+    mode='markers',
+    hoverinfo='text',
+    text=g.vs['title'], # Use the pre-formatted title for hover text
+    marker=dict(
+        showscale=False,
+        color=g.vs['color'],
+        size=g.vs['size'],
+        line_width=2))
+
+# Create the figure
+fig = go.Figure(data=[edge_trace, node_trace],
+             layout=go.Layout(
+                title='<br> TCR Neighborhood Network',
+                # titlefont_size=16,
+                showlegend=False,
+                hovermode='closest',
+                margin=dict(b=20,l=5,r=5,t=40),
+                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
+                )
+
+# Display the figure. This will embed correctly in the final Quarto HTML.
+fig.show()
+
+
+```
+**Figure 12. TCRdist Network** Graph showing all samples for which a proper distance was calculated across all samples. Node size is proportioanl to clone "Counts" and color varies depending on wether the clone is present in "Pre-", "Post" or both conditions. 
+
+This network graph provides a **global view of TCR relationships across all samples, integrating multiple layers of data.** Each node is a unique TCR clone, its size reflects its abundance, and its color indicates the sample condition where it was found. A line, or edge, connects any two TCRs that are biochemically similar (i.e., have a TCRdist below a set threshold), forming connected clusters.  
+
+The primary utility of this plot is to visualize these "TCR neighborhoods" across the entire dataset, allowing you to see how functionally related clones are shared between conditions or form a response to a treatment, such as a large cluster of clones appearing specifically in the "Post" condition.
+
+# TCR generation probabilities {#sec-olga}
+
+Calculating these probabilities in bulk TCR-seq data is valuable because **it provides a baseline understanding of the "expected" frequency of each TCR**. By comparing observed TCR frequencies against their generation probabilities, it is easier to identify TCRs that are "overrepresented" (clonally expanded) due to an immune response (e.g., to infection or cancer) rather than just being common due to biases in the generation process itself. This helps distinguish antigen-driven selection from inherent generation biases, offering clearer insights into immune repertoire dynamics and responses.  
+
+```{python}
+
+import pandas as pd
+import numpy as np
+import glob
+import os
+import plotly.graph_objects as go
+
+def create_interactive_pgen_histogram():
+    """
+    Finds all TCR pgen files and creates an interactive histogram with a
+    dropdown menu to switch between samples. Suitable for Quarto HTML.
+    """
+    # --- 1. Find all patient data files ---
+    base_path = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/olga/'
+    file_pattern = os.path.join(base_path, '*_tcr_pgen.tsv')
+    sample_files = sorted(glob.glob(file_pattern))
+
+    if not sample_files:
+        print(f"Error: No files found at the specified path pattern: {file_pattern}")
+        return
+
+    # --- 2. Create the Plotly Figure ---
+    fig = go.Figure()
+    
+    # Store data to determine global axis ranges later
+    all_log_probs = []
+    plotted_sample_names = []
+
+    # --- 3. Process each sample and add a histogram trace ---
+    for file_path in sample_files:
+        sample_name = os.path.basename(file_path).replace('_tcr_pgen.tsv', '')
+        
+        try:
+            # a. Load data
+            df = pd.read_csv(file_path, sep='\t')
+            
+            # b. Filter out rows with pgen == 0
+            df = df[df['pgen'] > 0].copy()
+            if df.empty:
+                print(f"Skipping {sample_name}: No valid pgen data after filtering.")
+                continue
+
+            # c. Calculate log probabilities and get counts
+            log_probs = np.log10(df['pgen'])
+            # Note: Using 'duplicate_count' as per the file header provided.
+            # Change to 'count (templates/reads)' if that's the correct column.
+            counts = df['duplicate_count'].astype(int)
+
+            # d. Create weighted data for histogram
+            # Plotly's histogram doesn't have a direct 'weights' param like matplotlib.
+            # We create the weighted distribution by repeating values.
+            weighted_log_probs = np.repeat(log_probs, counts)
+            all_log_probs.extend(weighted_log_probs)
+            plotted_sample_names.append(sample_name)
+
+            # e. Add histogram trace for the current sample
+            fig.add_trace(
+                go.Histogram(
+                    x=weighted_log_probs,
+                    name=sample_name,
+                    histnorm='probability density', # Normalizes to a probability density
+                    visible=(len(fig.data) == 0) # First one is visible
+                )
+            )
+        except Exception as e:
+            print(f"Could not process file {file_path}. Error: {e}")
+
+    # --- 4. Create the dropdown menu ---
+    buttons = []
+    for name in plotted_sample_names:
+        visibility_mask = [tr.name == name for tr in fig.data]
+        button = dict(
+            label=name,
+            method="update",
+            args=[{"visible": visibility_mask},
+                  {"title": f"Distribution of Beta Chain Generation Probabilities for {name}"}]
+        )
+        buttons.append(button)
+
+    # --- 5. Update the figure layout ---
+    initial_title = "Distribution of Beta Chain Generation Probabilities"
+    if plotted_sample_names:
+        initial_title = f"Distribution of Beta Chain Generation Probabilities for {plotted_sample_names[0]}"
+
+    fig.update_layout(
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=buttons,
+                direction="down",
+                pad={"r": 10, "t": 10},
+                showactive=True,
+                x=1.0,
+                xanchor="left",
+                y=1.15,
+                yanchor="top"
+            )
+        ],
+        title_text=initial_title,
+        xaxis_title_text="log<sub>10</sub> Generation Probability",
+        yaxis_title_text="Density",
+        bargap=0.01, # Gap between bars
+        font=dict(size=12)
+    )
+    
+    # Set a consistent x-axis range for all plots
+    if all_log_probs:
+        fig.update_xaxes(range=[min(all_log_probs), max(all_log_probs)])
+    
+    fig.show()
+
+
+create_interactive_pgen_histogram()
+
+
+```
+
+**Figure. 13 TCR Generation Probabilities** Probabilities shown above are weighted, accounting for the counts per clone within a repertoire.
+
+
+# TCRPheno: From TCR sequence to Phenotype {#sec-TCRPheno}
+
+[TCRpheno](https://www.cell.com/cell-reports/fulltext/S2211-1247(24)01449-9#fig1) is a machine learning model that predicts the likely functional phenotype of a T-cell based solely on its TCR sequence. This is powerful because it allows you to infer the roles of different T-cells (e.g., killer, regulator, memory) from your bulk sequencing data without needing corresponding cell surface marker information.
+
+**<u>How to Interpret the Scores?</u>** 🔍  
+**The output from TCRpheno is a set of scores, not a definitive classification.** For each TCR, a higher score in a category indicates a higher probability that the T-cell belongs to that functional group.
+
+- **TCRbeta.CD8:** A high score here suggests the TCR likely belongs to a cytotoxic CD8+ T-cell. These are the **"killers" of the adaptive immune system**, responsible for destroying virus-infected cells and tumor cells. A repertoire with many high-scoring CD8 TCRs indicates a strong, active anti-pathogen or anti-tumor response.
+
+- **TCRbeta.reg:** This score corresponds to regulatory T-cells (Tregs). These are the **"peacekeepers" that suppress other immune cells** to prevent autoimmune reactions and maintain tolerance. A high Treg score for a TCR suggests it plays a role in immune suppression.
+
+- **TCRbeta.mem:** This indicates a likely memory T-cell phenotype. These are the l**ong-lived "veterans" of the immune system that persist after an infection is cleared**, providing rapid protection upon re-exposure to the same pathogen.
+
+- **TCRbeta.innate:** A high score in this category suggests the TCR may belong to an innate-like T-cell, such as a MAIT or NKT cell. These cells bridge the gap between the innate and adaptive immune systems, **acting as rapid first responders to certain types of threats.**
+
+It's important to remember that a single TCR can have moderate scores in multiple categories, reflecting the **potential for cellular plasticity** or shared sequence features between different T-cell types. **The phenotype with the highest score is considered the most likely identity for that TCR.**
+
+```{python}
+
+import pandas as pd
+import plotly.graph_objects as go
+import glob
+import os
+
+def create_phenotype_composition_plot():
+    """
+    Finds all TCRpheno files, calculates the phenotype composition for each,
+    and generates an interactive stacked bar chart with samples grouped by patient.
+    """
+    # --- 1. Find all sample files ---
+    # Modify this path to the directory containing your tcrpheno output files
+    base_path = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/tcrpheno/'
+    file_pattern = os.path.join(base_path, '*_tcrpheno.tsv')
+    sample_files = glob.glob(file_pattern)
+
+    if not sample_files:
+        print(f"Error: No files found matching the pattern: {file_pattern}")
+        return
+
+    # --- 2. Process each file and aggregate the results ---
+    all_results = []
+    phenotype_cols = ["TCRbeta.innate", "TCRbeta.CD8", "TCRbeta.reg", "TCRbeta.mem"]
+
+    for file_path in sample_files:
+        try:
+            df = pd.read_csv(file_path, sep='\t')
+            
+            # Ensure required columns exist
+            if not all(col in df.columns for col in phenotype_cols):
+                print(f"Warning: Skipping {os.path.basename(file_path)} - missing required columns.")
+                continue
+
+            # a. For each TCR, find the phenotype with the highest score
+            # Reassigning after dropna is safer than using inplace=True
+            df_cleaned = df.dropna(subset=phenotype_cols).copy()
+            if df_cleaned.empty:
+                continue
+            
+            # CORRECTED: Use .loc for assignment to avoid SettingWithCopyWarning
+            df_cleaned.loc[:, 'dominant_phenotype'] = df_cleaned[phenotype_cols].idxmax(axis=1)
+
+            # b. Calculate the percentage of each phenotype in the sample
+            composition = df_cleaned['dominant_phenotype'].value_counts(normalize=True).reset_index()
+            composition.columns = ['phenotype', 'percentage']
+            
+            # c. Get sample name and store results
+            sample_name = os.path.basename(file_path).replace('_tcrpheno.tsv', '')
+            # CORRECTED: Use .loc for assignment
+            composition.loc[:, 'sample'] = sample_name
+            all_results.append(composition)
+
+        except Exception as e:
+            print(f"Could not process file {os.path.basename(file_path)}. Error: {e}")
+
+    if not all_results:
+        print("No valid data could be processed to generate a plot.")
+        return
+
+    # --- 3. Combine results and sort for plotting ---
+    results_df = pd.concat(all_results, ignore_index=True)
+    
+    # CORRECTED: Use .loc for modification
+    results_df.loc[:, 'percentage'] *= 100  # Convert to percentage
+
+    # Extract patient ID and condition (e.g., 'Base', 'Post') to sort by
+    # CORRECTED: Use .loc for assignment
+    results_df.loc[:, 'patient'] = results_df['sample'].apply(lambda x: x.split('_')[0])
+    results_df.loc[:, 'condition'] = results_df['sample'].apply(lambda x: '_'.join(x.split('_')[1:]))
+    
+    # Sort by patient first, then by the sample condition
+    results_df.sort_values(by=['patient', 'condition'], inplace=True)
+
+    # --- 4. Create the stacked bar chart ---
+    fig = go.Figure()
+    
+    # Define a consistent color map for the phenotypes
+    color_map = {
+        "TCRbeta.innate": "rgb(99, 110, 250)",  # Periwinkle Blue
+        "TCRbeta.CD8": "rgb(239, 85, 59)",    # Tomato Red
+        "TCRbeta.reg": "rgb(0, 204, 150)",     # Teal Green
+        "TCRbeta.mem": "rgb(171, 99, 250)"     # Medium Purple
+    }
+    
+    # Get the unique, sorted list of samples for the x-axis
+    sorted_samples = results_df['sample'].unique()
+
+    # Add one trace (a set of bars) for each phenotype
+    for phenotype in phenotype_cols:
+        plot_data = results_df[results_df['phenotype'] == phenotype]
+        fig.add_trace(go.Bar(
+            x=plot_data['sample'],
+            y=plot_data['percentage'],
+            name=phenotype.replace('TCRbeta.', ''), # Use cleaner names for the legend
+            marker_color=color_map.get(phenotype)
+        ))
+
+    # --- 5. Finalize the plot layout ---
+    fig.update_layout(
+        barmode='stack',
+        title_text='<b>TCR Phenotype Composition by Sample</b>',
+        xaxis_title='Sample',
+        yaxis_title='Percentage (%)',
+        legend_title='<b>Phenotype</b>',
+        # This ensures the x-axis follows our custom sort order
+        xaxis={'categoryorder': 'array', 'categoryarray': sorted_samples}
+    )
+    
+    fig.show()
+
+# --- Run the function ---
+create_phenotype_composition_plot()
+
+
+```
+**Figure. 14 Composition of Unique TCR Clonotypes by Predicted Phenotype** Stacked bar chart showing the proportional diversity of predicted T-cell phenotypes (memory, regulatory, CD8, or innate-like) for each sample, independent of clonal expansion. Each bar indicates the percentage of clones assigned to each category based on their highest TCRpheno score. 
+
+This plot answers the question: *"Of all the different types of T-cell soldiers available, what is the breakdown of their specialties?"*
+
+It reflects the underlying potential of the repertoire. Comparing "Base" vs. "Post" samples can reveal if a treatment induced the emergence of many new and different types of T-cells with a certain phenotype.
+
+
+```{python}
+
+import pandas as pd
+import plotly.graph_objects as go
+import glob
+import os
+
+def create_weighted_phenotype_plot():
+    """
+    Merges TCR counts with phenotype predictions to create a stacked bar chart
+    where phenotype composition is weighted by clonal expansion.
+    """
+    # --- 1. Define file paths ---
+    counts_file = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/compare/concatenated_cdr3.txt'
+    pheno_path = '/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/tcrpheno/'
+    
+    # --- 2. Load the primary TCR counts data ---
+    try:
+        counts_df = pd.read_csv(counts_file, sep='\t')
+    except FileNotFoundError:
+        print(f"Error: Counts file not found at {counts_file}")
+        return
+
+    # --- 3. Find all phenotype files ---
+    pheno_files = glob.glob(os.path.join(pheno_path, '*_tcrpheno.tsv'))
+    if not pheno_files:
+        print(f"Error: No phenotype files found in {pheno_path}")
+        return
+
+    # --- 4. Process each sample ---
+    all_results = []
+    phenotype_cols = ["TCRbeta.innate", "TCRbeta.CD8", "TCRbeta.reg", "TCRbeta.mem"]
+
+    for pheno_file_path in pheno_files:
+        try:
+            sample_name = os.path.basename(pheno_file_path).replace('_tcrpheno.tsv', '')
+            
+            pheno_df = pd.read_csv(pheno_file_path, sep='\t')
+            
+            sample_counts_df = counts_df[counts_df['sample'] == sample_name].copy()
+
+            merged_df = pd.merge(pheno_df, sample_counts_df[['CDR3b', 'counts']], 
+                                 left_on='junction_aa', right_on='CDR3b', how='left')
+            
+            # --- THIS IS THE CORRECTED LINE ---
+            # Avoid 'inplace=True' and reassign to ensure we are not working on a view
+            merged_df = merged_df.dropna(subset=phenotype_cols + ['counts'])
+            
+            if merged_df.empty:
+                continue
+
+            # a. Determine the dominant phenotype for each TCR
+            merged_df.loc[:, 'dominant_phenotype'] = merged_df[phenotype_cols].idxmax(axis=1)
+
+            # b. Calculate the total counts for each phenotype
+            composition = merged_df.groupby('dominant_phenotype')['counts'].sum().reset_index()
+            
+            # c. Calculate the percentage based on total counts for the sample
+            total_sample_counts = composition['counts'].sum()
+            composition.loc[:, 'percentage'] = (composition['counts'] / total_sample_counts) * 100
+            
+            composition.rename(columns={'dominant_phenotype': 'phenotype'}, inplace=True)
+            composition.loc[:, 'sample'] = sample_name
+            all_results.append(composition)
+
+        except Exception as e:
+            print(f"Could not process sample {sample_name}. Error: {e}")
+
+    if not all_results:
+        print("No valid data could be processed to generate a plot.")
+        return
+
+    # --- 5. Combine and sort results for plotting ---
+    results_df = pd.concat(all_results, ignore_index=True)
+    results_df.loc[:, 'patient'] = results_df['sample'].apply(lambda x: x.split('_')[0])
+    results_df.loc[:, 'condition'] = results_df['sample'].apply(lambda x: '_'.join(x.split('_')[1:]))
+    results_df.sort_values(by=['patient', 'condition'], inplace=True)
+
+    # --- 6. Create the stacked bar chart ---
+    fig = go.Figure()
+    color_map = {
+        "TCRbeta.innate": "rgb(99, 110, 250)",
+        "TCRbeta.CD8": "rgb(239, 85, 59)",
+        "TCRbeta.reg": "rgb(0, 204, 150)",
+        "TCRbeta.mem": "rgb(171, 99, 250)"
+    }
+    
+    sorted_samples = results_df['sample'].unique()
+
+    for phenotype in phenotype_cols:
+        plot_data = results_df[results_df['phenotype'] == phenotype]
+        fig.add_trace(go.Bar(
+            x=plot_data['sample'],
+            y=plot_data['percentage'],
+            name=phenotype.replace('TCRbeta.', ''),
+            marker_color=color_map.get(phenotype)
+        ))
+
+    # --- 7. Finalize the plot layout ---
+    fig.update_layout(
+        barmode='stack',
+        title_text='<b>Clonally-Weighted TCR Phenotype Composition</b>',
+        xaxis_title='Sample',
+        yaxis_title='Composition by Read Count (%)',
+        legend_title='<b>Phenotype</b>',
+        xaxis={'categoryorder': 'array', 'categoryarray': sorted_samples}
+    )
+    
+    fig.show()
+
+# --- Run the function ---
+create_weighted_phenotype_plot()
+
+```
+
+**Figure 15: Clonally-Weighted TCR Phenotype Composition** Stacked bar chart showing the proportional abundance of predicted T-cell phenotypes for each sample, weighted by clonal size. The size of each segment is determined by summing the read counts of all TCRs assigned to that functional category, thus directly reflecting clonal expansion.
+
+This plot answers the question: *"Of all the T-cell soldiers currently fighting on the battlefield, which specialty is dominating by sheer numbers?"*
+
+**<u>Higher Proportion of mem (Memory) T-cells</u>** 🛡️  
+This indicates the individual has a robust history of past immune responses, likely from resolved infections or successful vaccinations. These "veteran" cells are not actively fighting a major battle but are circulating long-term to provide rapid protection if a known pathogen reappears.  
+
+**<u>HHigher Proportion of reg (Regulatory) T-cells</u>** 🕊️  
+A high proportion of regulatory T-cells (Tregs) points to an immunosuppressive state. These "peacekeeper" cells work by dampening the activity of other immune cells. An abnormally high proportion can be detrimental in other contexts, such as cancer, where Tregs can be co-opted by tumors to protect themselves from being attacked by the patient's own immune system. 
+
+**<u>Higher Proportion of CD8 T-cells</u>** ⚔️ 
+A repertoire dominated by CD8-predicted T-cells is the clearest sign of an active, ongoing cytotoxic immune response. These "killer" T-cells are the primary soldiers responsible for identifying and destroying virus-infected cells and tumor cells. 

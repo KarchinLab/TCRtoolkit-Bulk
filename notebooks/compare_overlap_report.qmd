@@ -1,0 +1,617 @@
+---
+title: "TCR Overlap - Notebook"
+format:
+  html: 
+    theme: flatly
+    toc: true
+    toc_depth: 3
+    code-fold: true # show
+    #embed-resources: true
+    number-sections: true
+    smooth-scroll: true
+    grid:
+      body-width: 1000px
+      margin-width: 300px
+execute:
+  warnings: false
+jupyter: python3 # "Python3.9.6"
+# /usr/bin/python3 -m venv ~/venvs/quarto-env
+# source ~/venvs/quarto-env/bin/activate
+# pip install --upgrade pip
+# pip install scipy seaborn pandas matplotlib plotly jupyter ipykernel pyyaml matplotlib-venn upsetplot
+# python -m ipykernel install --user --name python3.9.6 --display-name "Python3.9.6"
+
+# source ~/venvs/quarto-env/bin/activate
+# quarto preview /Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/notebooks/compare_overlap_report.qmd --no-browser --no-watch-inputs
+---
+
+Thank you for using TCRtoolkit! This report is generated from sample data and metadata you provided. The report is divided into the following sections: 
+
+@sec-report-setup : Code to setup the report. This section includes the parameters you used to run the pipeline, loading necessary packages, data, etc.  
+@sec-Analysis: Analysis of TCRtoolkit pipeline reults  
+    @sec-heatmap: Pair-wise Repertoire Similarity: Morisita-Horn  
+    @sec-upset: Persistent and Unique Clones within patients  
+    @sec-TCRtable: Expanding and Contracting clones within patients
+
+# Report Setup {#sec-report-setup}
+
+```{python, echo=false}
+#| tags: [parameters]
+#| echo: false
+
+## 1. Pipeline Parameters
+#Default inputs are overwritten at the command line in `modules/local/plot_sample.nf`
+workflow_cmd='nextflow run main.nf --data_dir test_data/minimal-example     --samplesheet test_data/minimal-example/samplesheet.csv     --output out-minimal-dev     --max_memory 10GB --max_cpus 4'
+project_name='TCRtoolkit-Bulk'
+project_dir='/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/'
+morisita_mat='/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/compare/morisita_mat.csv'
+samplesheet='/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/test_data/minimal-example/samplesheet.csv'
+concat_cdr3='/Users/kmlanderos/Documents/Johns_Hopkins/Karchin_Lab/Projects/TCRtoolkit/TCRtoolkit-Bulk/out-minimal-dev/compare/concatenated_cdr3.txt'
+```
+
+```{python}
+#| tags: [setup]
+#| warning: false
+
+# 1. Load Packages
+import os
+import shutil
+import datetime
+import sys
+import numpy as np
+import pandas as pd
+import seaborn as sns
+# from matplotlib.colors import LinearSegmentedColormap
+# import scipy.cluster.hierarchy as sch
+
+# 2. Print Pipeline Information
+print('Pipeline information and parameters:' + '\n')
+print('Project Name:          ' + project_name)
+print('Workflow command:      ' + workflow_cmd)
+print('Pipeline Directory:    ' + project_dir)
+print('Date and time:         ' + str(datetime.datetime.now()))
+
+# 3. Importing similarity data
+## morisita similarity matrix
+morisita_df = pd.read_csv(morisita_mat, sep=',', header=0, index_col=0)
+
+# 4. Importing sample metadata
+metadata_df = pd.read_csv(samplesheet, sep=',', header=0, index_col=0)
+# metadata_df = metadata_df.reset_index()
+metadata_df.index = metadata_df.index.astype(str) + "_airr" 
+
+# 5. Import CDR3 data
+clonotypes_df = pd.read_csv(concat_cdr3, sep='\t', header=0, index_col=0).reset_index()
+```
+
+# Analysis {#sec-Analysis}
+
+## Pair-wise Repertoire Similarity: Morisita-Horn {#sec-heatmap}
+
+The **Morisita-Horn Index**  is a similarity metric often used to compare the similarity **between two samples**. Unlike simpler metrics that only check if a TCR is present or absent (e.g. Jaccard index), the Morisita-Horn index is **sensitive to clonal abundance**. This is critical for TCR data because it properly weights the contribution of highly expanded T-cell clones that are likely driving an immune response. 
+
+The index is calculated based on the probability that two TCRs, randomly selected from each of the two samples, will belong to the same clonotype. The index metric for 2 given samples is calculated as follows:  
+$$
+M(A,B)=\frac{2\sum_{i=1}^{S}a_{i}b_{i}}{(D_{a}+D_{b})AB} ; D_{a}=\frac{\sum_{i=1}^{S}a_{i}^{2}}{A^2},\quad D_{b}=\frac{\sum_{i=1}^{S}b_{i}^{2}}{B^2}
+$$
+
+Where:
+
+- $A$ and $B$ are the sets of unique CDR3 amino acid sequences (TCRs) in samples A and B.  
+- $a_{i}$ ($b_{i}$) is the number of times TCR $i$ is represented in the total $A$ ($B$) from one sample.  
+- $S$ is the total number of unique TCRs in the two samples.  
+- $D_{a}$ and $D_{b}$ are the Simpson Index values for samples A and B, respectively.  
+
+```{python}
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+
+# --- Preprocessing Morisita matrix ---
+morisita_numeric = morisita_df.apply(pd.to_numeric, errors='coerce')
+sns_cluster_morisita = sns.clustermap(morisita_numeric)
+plt.close()
+
+morisita_clustered = morisita_numeric.iloc[
+    sns_cluster_morisita.dendrogram_row.reordered_ind,
+    sns_cluster_morisita.dendrogram_col.reordered_ind
+]
+
+# --- Ensure metadata index matches Morisita matrix ---
+# metadata_df = metadata_df.set_index("sample")
+metadata_df = metadata_df.loc[morisita_clustered.index]
+
+# --- Collect valid metadata combinations ---
+timepoints = metadata_df['timepoint'].unique()
+origins = metadata_df['origin'].unique()
+
+heatmaps = []
+buttons = []
+
+# --- Set global zmin ---
+zmin = 0
+
+# 1. Full matrix heatmap with its own zmax
+full_zmax = 1 # np.percentile(morisita_clustered.values, 70)
+heatmaps.append(go.Heatmap(
+    z=morisita_clustered.values,
+    x=morisita_clustered.columns,
+    y=morisita_clustered.index,
+    text=np.round(morisita_clustered.values, 3),
+    hoverinfo="text",
+    coloraxis="coloraxis",
+    zmin=zmin,
+    zmax=full_zmax,
+    visible=True
+))
+buttons.append(dict(
+    label="All Samples",
+    method="update",
+    args=[
+        {"visible": [True] + [False] * (len(timepoints) * len(origins))},
+        {"title": "Morisita Heatmap — All Samples"}
+    ]
+))
+
+# 2. Filtered heatmaps, each with their own zmax
+for tp in timepoints:
+    for org in origins:
+        subset = metadata_df[
+            (metadata_df['timepoint'] == tp) & (metadata_df['origin'] == org)
+        ].index
+
+        if len(subset) >= 2:
+            filtered_matrix = morisita_clustered.loc[subset, subset]
+            filtered_zmax = 1 # np.percentile(filtered_matrix.values, 70)
+
+            heatmaps.append(go.Heatmap(
+                z=filtered_matrix.values,
+                x=filtered_matrix.columns,
+                y=filtered_matrix.index,
+                text=np.round(morisita_clustered.values, 3),
+                hoverinfo="text",
+                coloraxis="coloraxis",
+                zmin=zmin,
+                zmax=filtered_zmax,
+                visible=False
+            ))
+
+            visibility = [False] * len(heatmaps)
+            visibility[0] = False
+            visibility[-1] = True
+            buttons.append(dict(
+                label=f"{tp} / {org}",
+                method="update",
+                args=[
+                    {"visible": visibility},
+                    {"title": f"Morisita Heatmap — {tp} / {org}"}
+                ]
+            ))
+
+# --- Plotly figure with dropdown ---
+fig = go.Figure(data=heatmaps)
+fig.update_layout(
+    updatemenus=[
+        dict(
+            type="dropdown",
+            buttons=buttons,
+            direction="down",
+            showactive=True,
+            x=0.5,
+            xanchor="center",
+            y=1.1,
+            yanchor="top"
+        )
+    ],
+    title="Morisita Heatmap — All Samples",
+    coloraxis=dict(colorscale='Viridis', colorbar=dict(title="Similarity")),
+    width=850,
+    height=850,
+    autosize=False
+)
+
+fig.show()
+
+```
+
+### Interpreting the Index Value  
+
+It answers to the question: *How similar are the structures of two TCR repertoires, considering which clones are shared and how frequent those shared clones are in each sample?*
+
+**M(A,B)=0 (No Overlap):** The two TCR repertoires are completely different. They do not share any of the same TCR clonotypes.
+
+**M(A,B)=1 (Identical):** The two TCR repertoires are identical in structure. They consist of the same TCR clonotypes at the exact same relative frequencies.
+
+**0<M(A,B)<1 (Partial Overlap):** This indicates some degree of similarity. A value closer to 1 means the repertoires are very similar, sharing many of the same clones, especially the dominant ones. A value closer to 0 means they share very few clones, or the clones they do share are rare in one or both samples.
+
+A key strength of this index is that two samples can share a TCR, but if that TCR is highly abundant in one sample and extremely rare in the other, the index will be low, correctly reflecting the different immunological states.
+
+
+## Persistent and Unique Clones within patients {#sec-upset}
+
+To understand how the TCR repertoire changes over time, we need to identify which T-cell clones are persistent, which are new, and which have disappeared. Analyzing the TCR overlap for patients with multiple timepoint can be an ideal way of understanding changes in the repertoir over time. 
+
+**Persistent Clones (The Intersection):**  
+The height of this bar tells you the number of T-cell clones that persisted between the two timepoints. These could be long-lived memory T-cells or clones responding to a chronic antigen or tumor. A large persistent set suggests a stable immune state.
+
+**Unique Clones:**  
+- ***Waning Clones:*** Look for the bar with a solid dot for Time 1 only. These are clones that were present initially but disappeared or contracted by Time 2. This could represent the resolution of an acute infection.  
+- ***Emerging Clones:*** Look for the bar with a solid dot for Time 2 only. These are new T-cell clones that expanded between the timepoints. This is a strong indicator of a new immune response, perhaps due to a new infection, vaccination, or a response to treatment.
+
+```{python}
+import pandas as pd
+import io
+import base64
+import upsetplot
+from matplotlib_venn import venn2, venn3
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import warnings
+
+def fig_to_plotly(fig):
+    """Converts a Matplotlib figure to a Plotly image trace."""
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight")
+    plt.close(fig) # Close the figure to free up memory
+    img_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    return go.Image(source='data:image/png;base64,' + img_base64)
+
+def create_interactive_venn_navigator(df, patient_list):
+    """Creates an interactive Plotly figure with a dropdown to navigate Venn diagrams."""
+    fig = go.Figure()
+    
+    # --- Define the new color scheme ---
+    venn_colors = ['#4a90e2', '#f5a623', '#7ed321']
+
+    # Add a trace for each patient's Venn diagram
+    for i, patient_id in enumerate(patient_list):
+        patient_df = df[df['subject_id'] == patient_id]
+        timepoints = sorted(patient_df['timepoint'].unique())
+        clones_by_timepoint = {tp: set(patient_df[patient_df['timepoint'] == tp]['CDR3b']) for tp in timepoints}
+
+        # Create a new Matplotlib figure for each Venn
+        mpl_fig, ax = plt.subplots(figsize=(10, 7))
+        if len(timepoints) == 2:
+            venn2(
+                [clones_by_timepoint[tp] for tp in timepoints], 
+                set_labels=timepoints, 
+                ax=ax,
+                # --- Apply new colors and alpha ---
+                set_colors=venn_colors[:2],
+                alpha=0.7
+            )
+        elif len(timepoints) == 3:
+            venn3(
+                [clones_by_timepoint[tp] for tp in timepoints], 
+                set_labels=timepoints, 
+                ax=ax,
+                # --- Apply new colors and alpha ---
+                set_colors=venn_colors,
+                alpha=0.7
+            )
+        ax.set_title(f'Venn Diagram for {patient_id}', fontsize=16)
+
+        # Convert to Plotly trace and add to the figure
+        plotly_trace = fig_to_plotly(mpl_fig)
+        fig.add_trace(plotly_trace)
+        fig.data[-1].visible = (i == 0) # Make only the first one visible
+
+    # Create dropdown buttons
+    buttons = []
+    for i, patient_id in enumerate(patient_list):
+        visibility = [False] * len(patient_list)
+        visibility[i] = True
+        buttons.append(dict(label=patient_id, method="restyle", args=[{"visible": visibility}]))
+
+    fig.update_layout(
+        updatemenus=[dict(active=0, buttons=buttons, direction="down", x=0.01, xanchor="left", y=1.1, yanchor="top")]
+    )
+    # Remove axis lines and labels for a cleaner image display
+    fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False)
+    fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False)
+    return fig
+
+def create_interactive_upset_navigator(df, patient_list):
+    """Creates an interactive Plotly figure with a dropdown to navigate UpSet plots."""
+    fig = go.Figure()
+
+    # Add a trace for each patient's UpSet plot
+    for i, patient_id in enumerate(patient_list):
+        patient_df = df[df['subject_id'] == patient_id]
+        timepoints = sorted(patient_df['timepoint'].unique())
+        clones_by_timepoint = {tp: set(patient_df[patient_df['timepoint'] == tp]['CDR3b']) for tp in timepoints}
+        
+        upset_data = upsetplot.from_contents(clones_by_timepoint)
+        
+        # Create a new Matplotlib figure for each UpSet plot
+        mpl_fig = plt.figure(figsize=(12, 7))
+        upsetplot.plot(upset_data, fig=mpl_fig, sort_by='cardinality', show_counts=True)
+        plt.suptitle(f'UpSet Plot for {patient_id}', fontsize=16)
+
+        # Convert to Plotly trace and add to the figure
+        plotly_trace = fig_to_plotly(mpl_fig)
+        fig.add_trace(plotly_trace)
+        fig.data[-1].visible = (i == 0)
+
+    # Create dropdown buttons
+    buttons = []
+    for i, patient_id in enumerate(patient_list):
+        visibility = [False] * len(patient_list)
+        visibility[i] = True
+        buttons.append(dict(label=patient_id, method="restyle", args=[{"visible": visibility}]))
+
+    fig.update_layout(
+        updatemenus=[dict(active=0, buttons=buttons, direction="down", x=0.01, xanchor="left", y=1.1, yanchor="top")]
+    )
+    fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False)
+    fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False)
+    return fig
+```
+
+```{python}
+clonotypes_df[['subject_id', 'timepoint']] = clonotypes_df['sample'].str.split('_', expand=True, n=1)
+
+# Find patient groups
+timepoint_counts = clonotypes_df.groupby('subject_id')['timepoint'].nunique()
+venn_patients = timepoint_counts[timepoint_counts.isin([2, 3])].index.tolist()
+upset_patients = timepoint_counts[timepoint_counts > 1].index.tolist()
+
+# Dont show Warning messages
+warnings.filterwarnings(
+    "ignore",
+    category=FutureWarning,
+    module="upsetplot.plotting"
+)
+warnings.filterwarnings( # This second FutureWarning is for data downcasting, also from upsetplot.
+    "ignore",
+    category=FutureWarning,
+    module="upsetplot.data"
+)
+warnings.filterwarnings( # This UserWarning occurs because upsetplot's figure isn't fully compatible with tight_layout.
+    "ignore",
+    category=UserWarning,
+    message="This figure includes Axes that are not compatible with tight_layout"
+)
+
+# This chunk creates and displays the interactive Venn diagram plot.
+# if venn_patients:
+#     fig_venn = create_interactive_venn_navigator(clonotypes_df, venn_patients)
+#     fig_venn.show()
+# else:
+#     print("No patients found with 2 or 3 timepoints for Venn diagrams.")
+
+# This chunk creates and displays the interactive UpSet plot.
+if upset_patients:
+    fig_upset = create_interactive_upset_navigator(clonotypes_df, upset_patients)
+    fig_upset.show()
+else:
+    print("No patients found with multiple timepoints for UpSet plots.")
+
+```
+
+**Understanding the Upset plot:**     
+**1. Top Bar Chart: Intersection Size**  
+Each bar represents the number of TCR clones found in a specific combination of samples. The taller the bar, the more clones there are in that specific group. You can quickly see which combinations (e.g., clones unique to Time 1) are the largest.
+
+**2. Dot Matrix: Set Membership**  
+Below the bar chart, a matrix of dots tells you which samples are included in each intersection.
+A solid dot (⚫) means that the sample is part of the combination for the bar directly above it.
+A faint gray dot (⚪) means the sample is not part of that combination.
+A line connecting two or more solid dots (⚫--⚫) indicates that the bar above represents clones shared between those connected samples.
+
+**3. Left Bar Chart: Total Set Size**  
+This horizontal bar chart on the left shows the total number of unique clones in each original sample. This gives you a quick overview of the repertoire diversity for each timepoint before looking at the overlaps.
+
+
+## Expanding and Contracting clones  within patients {#sec-TCRtable}
+
+To track how the T-cell repertoire changes over time, we first identify clones present at both pre- and post-treatment timepoints. For these **shared clones**, we calculate an **"Expansion Score"**. This score is a powerful metric that quantifies the magnitude and direction of a clone's change in frequency, defined as:
+
+$$
+Expansion_Score=\log_{2}\left(\frac{\text{Frequency}_{\text{Post}}}{\text{Frequency}_{\text{Pre}}}\right)
+$$
+
+- **A positive score indicates expansion** (the clone makes up a larger proportion of the repertoire after treatment).  
+- **A negative score indicates contraction** (the clone's proportion has decreased).  
+- A score around 0 represents a stable behavior (the clone's proportion has remained quite similar).
+
+We use **clonal frequency** (the proportion of a specific clone relative to the total number of T-cells sequenced in that sample) **rather than raw counts**. This is crucial because **sequencing depth can vary between samples**. Using frequency normalizes the data, ensuring a fair comparison and preventing a sample with more total reads from appearing to have more expanded clones simply due to deeper sequencing.
+
+**<u>From Observations to Significance</u>**  
+**While the "Expansion Score" tells us the magnitude of a change, it doesn't tell us if that change is meaningful**. The immune system has natural fluctuations (**biological noise**), and the sequencing process itself has variability (**technical noise**). A small change in frequency could easily be a result of this random noise.
+
+To address this, **we perform a statistical test (Fisher's Exact Test) on the raw counts of each shared clone**. This test calculates the probability (the p-value) that an observed change is merely a random fluke. By adjusting these p-values for the thousands of tests run (one for each clone), we get a q-value, which controls the False Discovery Rate. A low q-value gives us high confidence that the observed expansion or contraction is a real, statistically significant event.
+
+
+The following tables display the T-cell clones that are shared between the pre- and post-treatment timepoints across all patients, focusing on those that have an Expansion Score greater or less than zero. **To highlight the most compelling results, clones that passed our dual-criteria significance test (i.e., have a q-value < 0.05 and an abs(Expansion Score) > 1.0) are shown in bold**.
+
+```{python}
+
+
+# 1. Calculate total counts for each sample
+sample_total_counts = clonotypes_df.groupby('sample')['counts'].sum().reset_index()
+sample_total_counts.rename(columns={'counts': 'total_counts'}, inplace=True)
+
+# 2. Merge total counts back to the main dataframe
+clonotypes_df = pd.merge(clonotypes_df, sample_total_counts, on='sample')
+
+# 3. Calculate frequency of each clonotype
+clonotypes_df['frequency'] = clonotypes_df['counts'] / clonotypes_df['total_counts']
+
+# 4. Identify shared clonotypes
+clonotype_cols = ['CDR3b', 'TRBV', 'TRBJ', 'subject_id']
+
+# Pivot the table to have timepoints as columns
+pivot_df = clonotypes_df.pivot_table(index=clonotype_cols,
+                                     columns='timepoint',
+                                     values='frequency').reset_index()
+
+# Determine Pre and Post timepoints
+pre_timepoint = 'Base'
+post_timepoint = 'Post'
+
+# Filter for shared clonotypes (present in both timepoints)
+shared_clones = pivot_df.dropna(subset=[pre_timepoint, post_timepoint]).copy()
+
+# 5. Calculate Expansion Score
+shared_clones['Expansion_Score'] = np.log2(shared_clones[post_timepoint] / shared_clones[pre_timepoint])
+
+# 6. Create the final table
+final_table = shared_clones[['subject_id', 'CDR3b', 'TRBV', 'TRBJ', pre_timepoint, post_timepoint, 'Expansion_Score']]
+final_table.rename(columns={pre_timepoint: 'Frequency_Pre', post_timepoint: 'Frequency_Post'}, inplace=True)
+
+# 7. Round frequencies to 3 decimal places
+final_table['Frequency_Pre'] = final_table['Frequency_Pre'].round(7)
+final_table['Frequency_Post'] = final_table['Frequency_Post'].round(7)
+final_table['Expansion_Score'] = final_table['Expansion_Score'].round(2)
+
+```
+
+
+```{python}
+
+import pandas as pd
+import numpy as np
+from scipy.stats import fisher_exact
+from statsmodels.stats.multitest import multipletests
+
+
+# Get total counts for each timepoint
+total_counts = clonotypes_df.groupby('timepoint')['counts'].sum()
+total_counts_pre = total_counts['Base']
+total_counts_post = total_counts['Post']
+
+# Pivot the counts data to have pre and post counts in the same row
+counts_pivot = clonotypes_df.pivot_table(
+    index=['CDR3b', 'TRBV', 'TRBJ'],
+    columns='timepoint',
+    values='counts'
+).fillna(0)
+counts_pivot.columns = ['counts_pre', 'counts_post']
+
+# Merge statistical data with our expansion score table
+analysis_df = pd.merge(final_table, counts_pivot, on=['CDR3b', 'TRBV', 'TRBJ'])
+
+
+# --- Step 2: Perform Fisher's Exact Test for Each Clone ---
+p_values = []
+for index, row in analysis_df.iterrows():
+    # Create the 2x2 contingency table
+    # [[clone_pre, other_clones_pre],
+    #  [clone_post, other_clones_post]]
+    table = [
+        [row['counts_pre'], total_counts_pre - row['counts_pre']],
+        [row['counts_post'], total_counts_post - row['counts_post']]
+    ]
+    _, p = fisher_exact(table)
+    p_values.append(p)
+
+analysis_df['p_value'] = p_values
+
+
+# --- Step 3: Correct for Multiple Comparisons (FDR) ---
+# Use the Benjamini-Hochberg method to get q-values
+reject, q_values, _, _ = multipletests(analysis_df['p_value'], alpha=0.05, method='fdr_bh')
+analysis_df['q_value'] = q_values
+
+```
+
+```{python}
+
+import pandas as pd
+import plotly.graph_objects as go
+from IPython.display import display, Markdown
+
+n_display= 100
+# Table 1: Top 3 Expanding Clonotypes
+top_expanding = analysis_df[analysis_df['Expansion_Score'] > 0].sort_values(
+    by='Expansion_Score', ascending=False
+).head(n_display)
+
+# Table 2: Top 3 Contracting Clonotypes
+top_contracting = analysis_df[analysis_df['Expansion_Score'] < 0].sort_values(
+    by='Expansion_Score', ascending=True
+).head(n_display)
+
+# --- Apply Significance Thresholds ---
+Q_VALUE_THRESHOLD = 0.05
+FOLD_CHANGE_THRESHOLD = 0.25
+
+# Create a boolean mask to identify significant rows
+significant_expanding_mask = (top_expanding['q_value'] < Q_VALUE_THRESHOLD) & \
+                   (top_expanding['Expansion_Score'].abs() > FOLD_CHANGE_THRESHOLD)
+display_expanding_df = top_expanding.copy().astype(str)
+display_expanding_df.loc[significant_expanding_mask] = display_expanding_df.loc[significant_expanding_mask].map(lambda x: f"<b>{x}</b>")
+
+# Create a boolean mask to identify significant rows
+significant_contracting_mask = (top_contracting['q_value'] < Q_VALUE_THRESHOLD) & \
+                   (top_contracting['Expansion_Score'].abs() > FOLD_CHANGE_THRESHOLD)
+display_contracting_df = top_contracting.copy().astype(str)
+display_contracting_df.loc[significant_contracting_mask] = display_contracting_df.loc[significant_contracting_mask].map(lambda x: f"<b>{x}</b>")
+
+# --- Plot ---
+# Helper Function to Calculate Column Widths ---
+def calculate_column_widths(df):
+    """
+    Calculates relative column widths based on the max string length
+    in each column, including the header.
+    """
+    widths = []
+    # Convert all data to string to measure length
+    df_str = df.astype(str)
+    
+    for col in df_str.columns:
+        # Get the maximum length of the string in the column's data
+        max_data_length = df_str[col].str.len().max()
+        # Get the length of the column header
+        header_length = len(col)
+        # The width for the column is the max of the two, plus a small buffer
+        widths.append(max([max_data_length, header_length]))
+        
+    return widths
+
+# Calculate the widths for our specific DataFrame
+col_widths_expanding = calculate_column_widths(display_expanding_df)
+col_widths_contracting = calculate_column_widths(display_contracting_df)
+
+# Table plot
+def create_plotly_table(df, col_widths, title_text):
+    """A helper function to create a styled Plotly Table Figure."""
+    fig = go.Figure(data=[go.Table(
+        columnwidth=col_widths,
+        header=dict(values=list(df.columns),
+                    fill_color='paleturquoise',
+                    align='left'),
+        cells=dict(values=[df[col] for col in df.columns],
+                   fill_color='lavender',
+                   align='left'))
+    ])
+    fig.update_layout(
+        width=1600,
+        title_text=title_text,
+        margin=dict(l=10, r=10, t=40, b=10) # Adjust margins
+    )
+    return fig
+
+# Display the tables
+display(create_plotly_table(display_expanding_df, col_widths_expanding, "Table 1: Top Expanding Clonotypes"))
+display(create_plotly_table(display_contracting_df, col_widths_contracting, "Table 2: Top Contracting Clonotypes"))
+
+
+```
+
+
+**<u>Interpret the Results</u>**   
+
+It is critical to not interpret the Expansion Score in isolation. A clone's biological importance depends on the interplay between three factors:
+
+- **Expansion Score (Magnitude)**: How large was the change?
+- **Statistical Significance (Confidence)**: How likely is it that the change was real? (q-value)
+- **Clone Counts (Abundance)**: What is the clone's overall presence in the sample?
+
+For example, a massive Expansion Score resulting from a change of 1 count to 10 might not be statistically significant and could be noise. Conversely, a highly significant q-value for a clone that changes from 2 counts to 8 might be statistically real but biologically unimportant due to its low abundance.
+
+**Therefore, the most robust conclusions come from paying attention to clones that demonstrate both a high abs(Expansion Score) and a low q-value, contextualized by their raw clone counts.**
