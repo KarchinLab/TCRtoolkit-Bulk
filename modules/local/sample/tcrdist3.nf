@@ -1,8 +1,8 @@
 process TCRDIST3_MATRIX {
     tag "${sample_meta.sample}"
-    label 'process_medium'
     container "ghcr.io/karchinlab/tcrtoolkit-bulk:main"
 
+    cpus 8
     memory {
         def sz = count_table.size()
         def mb = 1024 * 1024
