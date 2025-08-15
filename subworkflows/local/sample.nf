@@ -11,6 +11,7 @@ include { TCRDIST3_MATRIX; TCRDIST3_HISTOGRAM_CALC; TCRDIST3_HISTOGRAM_PLOT} fro
 include { OLGA_PGEN_CALC; OLGA_HISTOGRAM_CALC; OLGA_HISTOGRAM_PLOT; OLGA_WRITE_MAX } from '../../modules/local/sample/olga'
 include { CONVERGENCE } from '../../modules/local/sample/convergence'
 include { TCRPHENO } from '../../modules/local/sample/tcrpheno'
+include { VDJDB_GET; VDJDB_VDJMATCH } from '../../modules/local/sample/tcrspecificity'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,6 +132,10 @@ workflow SAMPLE {
     CONVERGENCE ( sample_map )
 
     TCRPHENO ( sample_map )
+
+    VDJDB_GET ()
+
+    VDJDB_VDJMATCH (sample_map, VDJDB_GET.out.ref_db)
 
     // emit:
     // sample_stats_csv
