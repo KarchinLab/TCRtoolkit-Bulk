@@ -1,0 +1,5 @@
+{
+    "input_format": "$.params.dataset.paramJson.input_format",
+    "convert_lvl": true,
+    "outdir": "$.params.dataset.s3|/data/"
+}
