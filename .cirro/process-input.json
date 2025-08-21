@@ -1,6 +1,6 @@
 {
-    "input_format": "$.params.dataset.paramJson.input_format",
-    "convert_lvl": "$.params.dataset.paramJson.convert_lvl",
+    "input_format": "airr",
+    "convert_lvl": false,
     "sample_lvl": "$.params.dataset.paramJson.sample_lvl",
     "compare_lvl": "$.params.dataset.paramJson.compare_lvl",
     "matrix_sparsity": "$.params.dataset.paramJson.matrix_sparsity",

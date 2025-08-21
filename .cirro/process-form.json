@@ -1,24 +1,8 @@
 {
     "form": {
+        "title": "TCRtoolkit Analysis",
+        "description": "Please convert input files to AIRR bulkTCR format prior to running analysis modules.",
         "properties": {
-            "input_format": {
-                "default": "adaptive",
-                "description": "Select format of input data.",
-                "title": "",
-                "type": "string",
-                "enum": [
-                    "adaptive",
-                    "cellranger",
-                    "airr"
-                ]
-            },
-            "convert_lvl": {
-                "default": false,
-                "description": "Select for standalone conversion of Adaptive/CellRanger data.",
-                "title": "Convert",
-                "type": "boolean",
-                "value": false
-            },
             "sample_lvl": {
                 "default": true,
                 "description": "Calculate and report sample level statistics of TCR repertoire",

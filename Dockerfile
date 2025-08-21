@@ -40,6 +40,16 @@ RUN mkdir -p /opt/quarto/1.6.42 \
 RUN Rscript -e "remotes::install_github('HetzDra/turboGliph')"
 RUN Rscript -e "remotes::install_github('kalaga27/tcrpheno')"
 
+# Install VDJmatch
+RUN mkdir -p /opt/vdjmatch/1.3.1 \
+    && curl -L -o vdjmatch.zip \
+        "https://github.com/antigenomics/vdjmatch/releases/download/1.3.1/vdjmatch-1.3.1.zip" \
+    && unzip vdjmatch.zip -d /opt/vdjmatch/1.3.1 \
+    && rm vdjmatch.zip
+
+# symlink VDJmatch
+RUN ln -s /opt/vdjmatch/1.3.1/vdjmatch-1.3.1/vdjmatch-1.3.1.jar /usr/local/bin/vdjmatch.jar
+
 # Add to PATH
 ENV PATH="/opt/quarto/1.6.42/bin:${PATH}"
 
