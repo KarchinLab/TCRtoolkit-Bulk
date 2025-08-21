@@ -27,9 +27,6 @@ def calc_sample_stats(sample_meta, counts):
     simpson_index = sum(clone_counts**2)/(num_TCRs**2)
     simpson_index_corrected = sum(clone_counts*(clone_counts-1))/(num_TCRs*(num_TCRs-1))
 
-    ## tcr productivity stats
-    counts["productive"] = counts["productive"].map({"true": True, "false": False}).astype("boolean")
-
     # count number of productive clones
     num_prod = sum(counts['productive'])
     num_nonprod = num_clones - num_prod

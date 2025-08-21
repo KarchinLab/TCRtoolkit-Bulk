@@ -8,7 +8,7 @@ Thanks for checking out `TCRtoolkit-Bulk`, the platform for bulk T Cell Repertoi
     <img src=assets/TCR_Bulk_profiling.png/>
 </p>
 
-We currently support bulk TCRseq data from Adaptive Biotechnologies.
+We currently support bulk TCRseq data in either AIRR or Adaptive Biotechnologies formats. Support for pseudo-bulk from single cell TCR sequencing will be available soon!
 
 ##  Requirements
 
